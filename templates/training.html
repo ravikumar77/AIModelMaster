@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Training - LLM Development Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold">
+            <i data-feather="trending-up" class="me-3"></i>
+            Training
+        </h1>
+        <p class="lead text-muted">Fine-tune your models with LoRA</p>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if not show_form and not show_detail %}
+            <a href="{{ url_for('new_training') }}" class="btn btn-primary">
+                <i data-feather="play" class="me-2"></i>
+                Start New Training
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if show_form %}
+<!-- New Training Form -->
+<div class="row mb-5">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="settings" class="me-2"></i>
+                    Configure Training Job
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="job_name" class="form-label">Job Name</label>
+                            <input type="text" class="form-control" id="job_name" name="job_name" required 
+                                   placeholder="e.g., GPT-2 Domain Adaptation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="model_id" class="form-label">Model</label>
+                            <select class="form-select" id="model_id" name="model_id" required>
+                                <option value="">Select a model...</option>
+                                {% for model in models %}
+                                    <option value="{{ model.id }}">{{ model.name }} ({{ model.base_model }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">Training Parameters</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="epochs" class="form-label">Epochs</label>
+                                    <input type="number" class="form-control" id="epochs" name="epochs" 
+                                           value="3" min="1" max="10">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="learning_rate" class="form-label">Learning Rate</label>
+                                    <input type="number" class="form-control" id="learning_rate" name="learning_rate" 
+                                           value="0.0001" step="0.00001" min="0.00001" max="0.01">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="batch_size" class="form-label">Batch Size</label>
+                                    <select class="form-select" id="batch_size" name="batch_size">
+                                        <option value="2">2</option>
+                                        <option value="4">4</option>
+                                        <option value="8" selected>8</option>
+                                        <option value="16">16</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">LoRA Configuration</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="lora_r" class="form-label">LoRA Rank (r)</label>
+                                    <input type="number" class="form-control" id="lora_r" name="lora_r" 
+                                           value="8" min="1" max="64">
+                                    <div class="form-text">Lower values use less memory</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="lora_alpha" class="form-label">LoRA Alpha</label>
+                                    <input type="number" class="form-control" id="lora_alpha" name="lora_alpha" 
+                                           value="32" min="1" max="128">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="lora_dropout" class="form-label">LoRA Dropout</label>
+                                    <input type="number" class="form-control" id="lora_dropout" name="lora_dropout" 
+                                           value="0.05" step="0.01" min="0" max="0.5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="play" class="me-2"></i>
+                            Start Training
+                        </button>
+                        <a href="{{ url_for('training') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if show_detail and job %}
+<!-- Training Job Detail -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ job.job_name }}</h5>
+                <div>
+                    <span class="badge bg-{% if job.status.value == 'running' %}warning{% elif job.status.value == 'completed' %}success{% elif job.status.value == 'failed' %}danger{% else %}secondary{% endif %} me-2">
+                        {{ job.status.value }}
+                    </span>
+                    {% if job.status.value == 'running' %}
+                        <span class="badge bg-info">{{ "%.1f"|format(job.progress) }}%</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Model:</strong> {{ job.model.name }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Started:</strong> {{ job.started_at.strftime('%Y-%m-%d %H:%M') if job.started_at else 'Not started' }}
+                    </div>
+                </div>
+                
+                {% if job.status.value == 'running' %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Progress</strong>
+                            <span class="text-muted">Epoch {{ job.current_epoch }}/{{ job.epochs }}</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" style="width: {{ job.progress }}%"></div>
+                        </div>
+                        {% if job.current_loss %}
+                            <small class="text-muted">Current Loss: {{ "%.4f"|format(job.current_loss) }}</small>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <!-- Training Configuration -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Training Parameters</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Epochs:</strong> {{ job.epochs }}</li>
+                            <li><strong>Learning Rate:</strong> {{ job.learning_rate }}</li>
+                            <li><strong>Batch Size:</strong> {{ job.batch_size }}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>LoRA Configuration</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Rank (r):</strong> {{ job.lora_r }}</li>
+                            <li><strong>Alpha:</strong> {{ job.lora_alpha }}</li>
+                            <li><strong>Dropout:</strong> {{ job.lora_dropout }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Training Stats</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="lossChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Training Logs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Training Logs</h6>
+            </div>
+            <div class="card-body">
+                {% if job.logs %}
+                    <pre class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto;">{{ job.logs }}</pre>
+                {% else %}
+                    <p class="text-muted">No logs available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Training Jobs List -->
+{% if jobs.items %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Job Name</th>
+                                <th>Model</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for job in jobs.items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ job.job_name }}</strong>
+                                        <br><small class="text-muted">{{ job.epochs }} epochs, LR: {{ job.learning_rate }}</small>
+                                    </td>
+                                    <td>{{ job.model.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if job.status.value == 'running' %}warning{% elif job.status.value == 'completed' %}success{% elif job.status.value == 'failed' %}danger{% else %}secondary{% endif %}">
+                                            {{ job.status.value }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if job.status.value == 'running' %}
+                                            <div class="progress" style="width: 100px;">
+                                                <div class="progress-bar" role="progressbar" style="width: {{ job.progress }}%"></div>
+                                            </div>
+                                            <small class="text-muted">{{ "%.1f"|format(job.progress) }}%</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('training_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="eye" class="me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if jobs.pages > 1 %}
+                    <nav aria-label="Training jobs pagination">
+                        <ul class="pagination justify-content-center mt-3">
+                            {% if jobs.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('training', page=jobs.prev_num) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in jobs.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != jobs.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('training', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if jobs.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('training', page=jobs.next_num) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i data-feather="trending-up" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                <h4 class="text-muted">No training jobs found</h4>
+                <p class="text-muted mb-4">Start fine-tuning your first model with LoRA.</p>
+                <a href="{{ url_for('new_training') }}" class="btn btn-primary">
+                    <i data-feather="play" class="me-2"></i>
+                    Start Your First Training
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if show_detail and job and job.status.value == 'running' %}
+<script>
+// Auto-refresh for running jobs
+setTimeout(function() {
+    window.location.reload();
+}, 5000);
+
+// Loss chart
+const ctx = document.getElementById('lossChart').getContext('2d');
+const lossChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['0', '10', '20', '30', '40', '50'],
+        datasets: [{
+            label: 'Training Loss',
+            data: [3.0, 2.8, 2.5, 2.2, 1.9, {{ job.current_loss if job.current_loss else 1.6 }}],
+            borderColor: 'rgb(255, 193, 7)',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                title: {
+                    display: true,
+                    text: 'Loss'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Steps'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

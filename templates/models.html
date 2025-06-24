@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Models - LLM Development Platform{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="display-5 fw-bold">
+            <i data-feather="layers" class="me-3"></i>
+            Models
+        </h1>
+        <p class="lead text-muted">Manage your language models</p>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if not show_form %}
+            <a href="{{ url_for('new_model') }}" class="btn btn-primary">
+                <i data-feather="plus" class="me-2"></i>
+                Create New Model
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if show_form %}
+<!-- Create New Model Form -->
+<div class="row mb-5">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="plus-circle" class="me-2"></i>
+                    Create New Model
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Model Name</label>
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   placeholder="e.g., My Custom GPT Model">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="base_model" class="form-label">Base Model</label>
+                            <select class="form-select" id="base_model" name="base_model" required>
+                                <option value="">Select a base model...</option>
+                                {% for model in available_models %}
+                                    <option value="{{ model }}">{{ model }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Describe the purpose and characteristics of this model..."></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i data-feather="save" class="me-2"></i>
+                            Create Model
+                        </button>
+                        <a href="{{ url_for('models') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if show_detail and model %}
+<!-- Model Detail View -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ model.name }}</h5>
+                <span class="badge bg-{% if model.status.value == 'available' %}success{% elif model.status.value == 'training' %}warning{% elif model.status.value == 'error' %}danger{% else %}secondary{% endif %}">
+                    {{ model.status.value }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Base Model:</strong> {{ model.base_model }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Model Size:</strong> {{ model.model_size }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Created:</strong> {{ model.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Updated:</strong> {{ model.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+                {% if model.description %}
+                    <div class="mb-3">
+                        <strong>Description:</strong>
+                        <p class="mt-2">{{ model.description }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('inference') }}?model_id={{ model.id }}" class="btn btn-primary">
+                        <i data-feather="play" class="me-2"></i>
+                        Try Inference
+                    </a>
+                    <a href="{{ url_for('new_training') }}?model_id={{ model.id }}" class="btn btn-warning">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Start Training
+                    </a>
+                    <a href="{{ url_for('evaluation') }}?model_id={{ model.id }}" class="btn btn-info">
+                        <i data-feather="bar-chart" class="me-2"></i>
+                        Evaluate
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Training History</h6>
+            </div>
+            <div class="card-body">
+                {% if training_jobs %}
+                    <div class="list-group list-group-flush">
+                        {% for job in training_jobs[:5] %}
+                            <div class="list-group-item px-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">{{ job.job_name }}</h6>
+                                        <small class="text-muted">{{ job.created_at.strftime('%m/%d %H:%M') }}</small>
+                                    </div>
+                                    <span class="badge bg-{% if job.status.value == 'running' %}warning{% elif job.status.value == 'completed' %}success{% elif job.status.value == 'failed' %}danger{% else %}secondary{% endif %}">
+                                        {{ job.status.value }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No training jobs yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluations -->
+{% if evaluations %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Recent Evaluations</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Evaluation</th>
+                                <th>Perplexity</th>
+                                <th>BLEU Score</th>
+                                <th>ROUGE Score</th>
+                                <th>Diversity</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for eval in evaluations %}
+                                <tr>
+                                    <td>{{ eval.eval_name }}</td>
+                                    <td>{{ "%.2f"|format(eval.perplexity) if eval.perplexity }}</td>
+                                    <td>{{ "%.3f"|format(eval.bleu_score) if eval.bleu_score }}</td>
+                                    <td>{{ "%.3f"|format(eval.rouge_score) if eval.rouge_score }}</td>
+                                    <td>{{ "%.3f"|format(eval.response_diversity) if eval.response_diversity }}</td>
+                                    <td>{{ eval.created_at.strftime('%m/%d %H:%M') }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Models List -->
+{% if models.items %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Base Model</th>
+                                <th>Status</th>
+                                <th>Size</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for model in models.items %}
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <strong>{{ model.name }}</strong>
+                                            {% if model.description %}
+                                                <br><small class="text-muted">{{ model.description[:60] }}{% if model.description|length > 60 %}...{% endif %}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>{{ model.base_model }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if model.status.value == 'available' %}success{% elif model.status.value == 'training' %}warning{% elif model.status.value == 'error' %}danger{% else %}secondary{% endif %}">
+                                            {{ model.status.value }}
+                                        </span>
+                                    </td>
+                                    <td>{{ model.model_size }}</td>
+                                    <td>{{ model.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('model_detail', model_id=model.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i data-feather="eye" class="me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if models.pages > 1 %}
+                    <nav aria-label="Models pagination">
+                        <ul class="pagination justify-content-center mt-3">
+                            {% if models.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('models', page=models.prev_num) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in models.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != models.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('models', page=page_num) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if models.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('models', page=models.next_num) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i data-feather="layers" class="text-muted mb-3" style="width: 64px; height: 64px;"></i>
+                <h4 class="text-muted">No models found</h4>
+                <p class="text-muted mb-4">Get started by creating your first language model.</p>
+                <a href="{{ url_for('new_model') }}" class="btn btn-primary">
+                    <i data-feather="plus" class="me-2"></i>
+                    Create Your First Model
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

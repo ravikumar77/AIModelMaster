@@ -1,0 +1,257 @@
+/* Custom CSS for LLM Development Platform */
+/* Minimal overrides to enhance Bootstrap dark theme */
+
+:root {
+    --custom-border-radius: 0.5rem;
+    --custom-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --custom-shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced card styling */
+.card {
+    border-radius: var(--custom-border-radius);
+    box-shadow: var(--custom-shadow);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: var(--custom-shadow-lg);
+}
+
+/* Navigation enhancements */
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.nav-link {
+    border-radius: var(--custom-border-radius);
+    margin: 0 0.25rem;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+    background-color: var(--bs-gray-800);
+}
+
+.nav-link.active {
+    background-color: var(--bs-primary);
+    color: white !important;
+}
+
+/* Enhanced form styling */
+.form-control, .form-select {
+    border-radius: var(--custom-border-radius);
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Button enhancements */
+.btn {
+    border-radius: var(--custom-border-radius);
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Progress bar styling */
+.progress {
+    border-radius: var(--custom-border-radius);
+    height: 0.75rem;
+}
+
+.progress-bar {
+    border-radius: var(--custom-border-radius);
+}
+
+/* Badge enhancements */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+/* Table enhancements */
+.table {
+    border-radius: var(--custom-border-radius);
+    overflow: hidden;
+}
+
+.table-hover tbody tr:hover {
+    background-color: var(--bs-gray-800);
+}
+
+/* List group styling */
+.list-group-item {
+    border-radius: var(--custom-border-radius) !important;
+    margin-bottom: 0.25rem;
+    border: 1px solid var(--bs-border-color);
+    transition: background-color 0.2s ease-in-out;
+}
+
+.list-group-item:hover {
+    background-color: var(--bs-gray-800);
+}
+
+.list-group-flush .list-group-item {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0 !important;
+    margin-bottom: 0;
+}
+
+/* Alert enhancements */
+.alert {
+    border-radius: var(--custom-border-radius);
+    border: none;
+}
+
+/* Modal enhancements */
+.modal-content {
+    border-radius: var(--custom-border-radius);
+    border: none;
+    box-shadow: var(--custom-shadow-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--bs-border-color);
+}
+
+/* Code and pre styling */
+pre {
+    border-radius: var(--custom-border-radius);
+    border: 1px solid var(--bs-border-color);
+}
+
+/* Custom utilities */
+.text-gradient {
+    background: linear-gradient(45deg, var(--bs-primary), var(--bs-info));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.border-gradient {
+    border: 2px solid;
+    border-image: linear-gradient(45deg, var(--bs-primary), var(--bs-info)) 1;
+    border-radius: var(--custom-border-radius);
+}
+
+/* Feather icon alignment */
+.feather {
+    vertical-align: middle;
+}
+
+/* Status indicator animations */
+.status-indicator {
+    position: relative;
+    display: inline-block;
+}
+
+.status-indicator::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.status-running::before {
+    background-color: var(--bs-warning);
+    opacity: 0.3;
+}
+
+.status-indicator.status-completed::before {
+    background-color: var(--bs-success);
+    opacity: 0.3;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.3;
+    }
+}
+
+/* Chart container styling */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+}
+
+/* Loading states */
+.loading-skeleton {
+    background: linear-gradient(90deg, var(--bs-gray-700) 25%, var(--bs-gray-600) 50%, var(--bs-gray-700) 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--custom-border-radius);
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Responsive enhancements */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* Focus indicators for accessibility */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .btn,
+    .modal,
+    .alert {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+}
