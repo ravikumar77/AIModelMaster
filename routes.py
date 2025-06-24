@@ -69,9 +69,11 @@ def model_detail(model_id):
 @app.route('/training')
 def training():
     page = request.args.get('page', 1, type=int)
-    jobs_query = TrainingJob.query.order_by(TrainingJob.created_at.desc())
-    jobs_paginated = jobs_query.paginate(page=page, per_page=10, error_out=False)
-    return render_template('training.html', jobs=jobs_paginated)
+    jobs = TrainingJob.query.order_by(TrainingJob.created_at.desc()).paginate(
+        page=page, per_page=10, error_out=False
+    )
+    models = LLMModel.query.filter_by(status=ModelStatus.AVAILABLE).all()
+    return render_template('training.html', jobs=jobs, models=models, show_form=False)
 
 @app.route('/training/new', methods=['GET', 'POST'])
 def new_training():
@@ -103,10 +105,11 @@ def new_training():
         training_service.start_training_simulation(job.id)
         
         flash(f'Training job "{job_name}" started successfully!', 'success')
-        return redirect(url_for('training'))
+        return redirect(url_for('training_detail', job_id=job.id))
     
     models = LLMModel.query.filter_by(status=ModelStatus.AVAILABLE).all()
-    return render_template('training.html', models=models, show_form=True)
+    jobs = TrainingJob.query.paginate(page=1, per_page=10, error_out=False)
+    return render_template('training.html', models=models, jobs=jobs, show_form=True)
 
 @app.route('/training/<int:job_id>')
 def training_detail(job_id):
