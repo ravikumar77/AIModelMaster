@@ -50,6 +50,8 @@ class TrainingJob(db.Model):
     logs = db.Column(db.Text)
     current_loss = db.Column(db.Float)
     current_epoch = db.Column(db.Integer, default=0)
+    dataset_id = db.Column(db.Integer, db.ForeignKey('coding_dataset.id'), nullable=True)
+    training_type = db.Column(db.String(64), default='general')  # general, coding, instruction_following
 
 class Evaluation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -74,3 +76,44 @@ class GenerationLog(db.Model):
     top_k = db.Column(db.Integer, default=50)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     generation_time = db.Column(db.Float)  # Time in seconds
+    api_key_id = db.Column(db.Integer, db.ForeignKey('api_key.id'), nullable=True)
+    
+    # Relationship to access model information
+    model = db.relationship('LLMModel', backref='generation_logs')
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relationships
+    api_keys = db.relationship('APIKey', backref='user', lazy=True)
+
+class APIKey(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    key_name = db.Column(db.String(128), nullable=False)
+    key_value = db.Column(db.String(256), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_used = db.Column(db.DateTime)
+    usage_count = db.Column(db.Integer, default=0)
+    rate_limit = db.Column(db.Integer, default=1000)  # requests per day
+    
+    def __repr__(self):
+        return f'<APIKey {self.key_name}>'
+
+class CodingDataset(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text)
+    language = db.Column(db.String(64))  # Python, JavaScript, etc.
+    dataset_type = db.Column(db.String(64))  # code_completion, bug_fixing, etc.
+    file_path = db.Column(db.String(256))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<CodingDataset {self.name}>'

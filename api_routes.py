@@ -3,9 +3,11 @@ API routes for LLM platform - RESTful endpoints for external access
 """
 from flask import jsonify, request
 from app import app, db
-from models import LLMModel, TrainingJob, Evaluation, GenerationLog, ModelStatus, TrainingStatus
+from models import LLMModel, TrainingJob, Evaluation, GenerationLog, ModelStatus, TrainingStatus, User, APIKey, CodingDataset
 from llm_service import LLMService
 from training_service import TrainingService
+from auth_service import auth_service, require_api_key
+from coding_training import coding_service
 from datetime import datetime
 import logging
 
@@ -122,6 +124,7 @@ def api_create_model():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/models/<int:model_id>/generate', methods=['POST'])
+@require_api_key
 def api_generate_text(model_id):
     """Generate text using a specific model"""
     try:
@@ -158,7 +161,8 @@ def api_generate_text(model_id):
             max_length=max_length,
             top_p=top_p,
             top_k=top_k,
-            generation_time=generation_time
+            generation_time=generation_time,
+            api_key_id=g.api_key.id if hasattr(g, 'api_key') else None
         )
         db.session.add(log_entry)
         db.session.commit()
@@ -407,4 +411,175 @@ def api_get_statistics():
         
     except Exception as e:
         logging.error(f"API error getting statistics: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# User and API Key Management
+
+@app.route('/api/auth/register', methods=['POST'])
+def api_register():
+    """Register a new user and get API key"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON data required'}), 400
+            
+        required_fields = ['username', 'email', 'password']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        user, result = auth_service.create_user(
+            data['username'], 
+            data['email'], 
+            data['password']
+        )
+        
+        if not user:
+            return jsonify({'error': result}), 400
+        
+        return jsonify({
+            'user_id': user.id,
+            'username': user.username,
+            'api_key': result.key_value,
+            'message': 'User registered successfully'
+        }), 201
+        
+    except Exception as e:
+        logging.error(f"API error registering user: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/keys', methods=['GET'])
+@require_api_key
+def api_list_keys():
+    """List user's API keys"""
+    try:
+        keys = APIKey.query.filter_by(user_id=g.user_id, is_active=True).all()
+        return jsonify({
+            'api_keys': [{
+                'id': key.id,
+                'key_name': key.key_name,
+                'created_at': key.created_at.isoformat() if key.created_at else None,
+                'last_used': key.last_used.isoformat() if key.last_used else None,
+                'usage_count': key.usage_count,
+                'rate_limit': key.rate_limit
+            } for key in keys]
+        })
+    except Exception as e:
+        logging.error(f"API error listing keys: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/keys', methods=['POST'])
+@require_api_key
+def api_create_key():
+    """Create a new API key"""
+    try:
+        data = request.get_json() or {}
+        key_name = data.get('key_name', 'New API Key')
+        rate_limit = data.get('rate_limit', 1000)
+        
+        api_key = auth_service.create_api_key(g.user_id, key_name, rate_limit)
+        
+        if not api_key:
+            return jsonify({'error': 'Failed to create API key'}), 500
+        
+        return jsonify({
+            'id': api_key.id,
+            'key_name': api_key.key_name,
+            'key_value': api_key.key_value,
+            'rate_limit': api_key.rate_limit,
+            'message': 'API key created successfully'
+        }), 201
+        
+    except Exception as e:
+        logging.error(f"API error creating key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/keys/<int:key_id>', methods=['DELETE'])
+@require_api_key
+def api_delete_key(key_id):
+    """Deactivate an API key"""
+    try:
+        success = auth_service.deactivate_api_key(key_id, g.user_id)
+        
+        if success:
+            return jsonify({'message': 'API key deactivated successfully'})
+        else:
+            return jsonify({'error': 'API key not found'}), 404
+            
+    except Exception as e:
+        logging.error(f"API error deleting key: {e}")
+        return jsonify({'error': str(e)}), 500
+
+# Coding Datasets and Training
+
+@app.route('/api/datasets', methods=['GET'])
+def api_list_datasets():
+    """List coding datasets"""
+    try:
+        datasets = coding_service.get_datasets()
+        return jsonify({
+            'datasets': [{
+                'id': dataset.id,
+                'name': dataset.name,
+                'description': dataset.description,
+                'language': dataset.language,
+                'dataset_type': dataset.dataset_type,
+                'created_at': dataset.created_at.isoformat() if dataset.created_at else None
+            } for dataset in datasets]
+        })
+    except Exception as e:
+        logging.error(f"API error listing datasets: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/training/coding', methods=['POST'])
+@require_api_key
+def api_create_coding_training():
+    """Create a coding-specific training job"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'JSON data required'}), 400
+            
+        required_fields = ['model_id', 'job_name', 'dataset_id']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+        
+        # Validate model and dataset exist
+        model = LLMModel.query.get_or_404(data['model_id'])
+        dataset = CodingDataset.query.get_or_404(data['dataset_id'])
+        
+        job = TrainingJob(
+            model_id=data['model_id'],
+            job_name=data['job_name'],
+            dataset_id=data['dataset_id'],
+            training_type='coding',
+            epochs=data.get('epochs', 5),
+            learning_rate=data.get('learning_rate', 0.00005),  # Lower for coding
+            batch_size=data.get('batch_size', 4),
+            lora_r=data.get('lora_r', 16),  # Higher for coding
+            lora_alpha=data.get('lora_alpha', 32),
+            lora_dropout=data.get('lora_dropout', 0.1),
+            status=TrainingStatus.PENDING
+        )
+        
+        db.session.add(job)
+        db.session.commit()
+        
+        # Start training simulation
+        training_service.start_training_simulation(job.id)
+        
+        return jsonify({
+            'id': job.id,
+            'job_name': job.job_name,
+            'model_id': job.model_id,
+            'dataset_id': job.dataset_id,
+            'training_type': job.training_type,
+            'status': job.status.value,
+            'message': 'Coding training job created and started successfully'
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"API error creating coding training job: {e}")
         return jsonify({'error': str(e)}), 500

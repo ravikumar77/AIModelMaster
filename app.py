@@ -44,3 +44,7 @@ with app.app_context():
     # Import routes
     import routes
     import api_routes
+    
+    # Initialize coding datasets
+    from coding_training import coding_service
+    coding_service.initialize_default_datasets()

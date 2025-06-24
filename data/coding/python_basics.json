@@ -1,0 +1,27 @@
+[
+  {
+    "instruction": "Write a function to calculate the factorial of a number",
+    "input": "def factorial(n):",
+    "output": "def factorial(n):\n    if n == 0 or n == 1:\n        return 1\n    else:\n        return n * factorial(n - 1)"
+  },
+  {
+    "instruction": "Create a function to find the maximum element in a list",
+    "input": "def find_max(lst):",
+    "output": "def find_max(lst):\n    if not lst:\n        return None\n    max_val = lst[0]\n    for item in lst[1:]:\n        if item > max_val:\n            max_val = item\n    return max_val"
+  },
+  {
+    "instruction": "Write a function to check if a string is a palindrome",
+    "input": "def is_palindrome(s):",
+    "output": "def is_palindrome(s):\n    s = s.lower().replace(' ', '')\n    return s == s[::-1]"
+  },
+  {
+    "instruction": "Create a class for a simple bank account",
+    "input": "class BankAccount:",
+    "output": "class BankAccount:\n    def __init__(self, initial_balance=0):\n        self.balance = initial_balance\n    \n    def deposit(self, amount):\n        if amount > 0:\n            self.balance += amount\n            return True\n        return False\n    \n    def withdraw(self, amount):\n        if 0 < amount <= self.balance:\n            self.balance -= amount\n            return True\n        return False\n    \n    def get_balance(self):\n        return self.balance"
+  },
+  {
+    "instruction": "Write a function to merge two sorted lists",
+    "input": "def merge_sorted_lists(list1, list2):",
+    "output": "def merge_sorted_lists(list1, list2):\n    merged = []\n    i, j = 0, 0\n    \n    while i < len(list1) and j < len(list2):\n        if list1[i] <= list2[j]:\n            merged.append(list1[i])\n            i += 1\n        else:\n            merged.append(list2[j])\n            j += 1\n    \n    merged.extend(list1[i:])\n    merged.extend(list2[j:])\n    \n    return merged"
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "instruction": "Fix the bug in this Python function",
+    "input": "def calculate_average(numbers):\n    total = 0\n    for num in numbers:\n        total += num\n    return total / len(numbers)  # Bug: division by zero",
+    "output": "def calculate_average(numbers):\n    if not numbers:\n        return 0\n    total = 0\n    for num in numbers:\n        total += num\n    return total / len(numbers)"
+  },
+  {
+    "instruction": "Fix the infinite loop in this code",
+    "input": "def countdown(n):\n    while n > 0:\n        print(n)\n        # Bug: n is never decremented",
+    "output": "def countdown(n):\n    while n > 0:\n        print(n)\n        n -= 1"
+  },
+  {
+    "instruction": "Fix the index error in this function",
+    "input": "def get_last_element(lst):\n    return lst[len(lst)]  # Bug: index out of range",
+    "output": "def get_last_element(lst):\n    if not lst:\n        return None\n    return lst[len(lst) - 1]"
+  }
+]

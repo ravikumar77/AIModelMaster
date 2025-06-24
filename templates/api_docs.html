@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}API Documentation - LLM Platform{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i data-feather="code"></i> API Documentation</h1>
+                <div>
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i data-feather="arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">API Overview</h5>
+                </div>
+                <div class="card-body">
+                    <p>The LLM Platform provides RESTful APIs for programmatic access to models, training, and evaluation features.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Base URL</h6>
+                            <code>{{ request.url_root }}api</code>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Authentication</h6>
+                            <p>Use API keys in the <code>X-API-Key</code> header</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Get Started -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Start</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>1. Register and Get API Key</h6>
+                            <pre><code>curl -X POST {{ request.url_root }}api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "your_username",
+    "email": "your@email.com", 
+    "password": "your_password"
+  }'</code></pre>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>2. Generate Text</h6>
+                            <pre><code>curl -X POST {{ request.url_root }}api/models/1/generate \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key" \
+  -d '{
+    "prompt": "def fibonacci(n):",
+    "max_length": 100
+  }'</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Endpoints -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">API Endpoints</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Health Check -->
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/health</h6>
+                        <p>Check API health status</p>
+                        <div class="example">
+                            <strong>Response:</strong>
+                            <pre><code>{
+  "status": "healthy",
+  "timestamp": "2025-06-24T14:00:00.000000",
+  "version": "1.0.0"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Models -->
+                    <h6 class="border-bottom pb-2 mb-3">Models</h6>
+                    
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/models</h6>
+                        <p>List all available models</p>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/models/{model_id}</h6>
+                        <p>Get specific model information</p>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/models</h6>
+                        <p>Create a new model</p>
+                        <div class="example">
+                            <strong>Request Body:</strong>
+                            <pre><code>{
+  "name": "My Custom Model",
+  "base_model": "gpt2",
+  "description": "Custom model description"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/models/{model_id}/generate 🔒</h6>
+                        <p>Generate text using a model (requires API key)</p>
+                        <div class="example">
+                            <strong>Request Body:</strong>
+                            <pre><code>{
+  "prompt": "def fibonacci(n):",
+  "temperature": 0.7,
+  "max_length": 100,
+  "top_p": 0.9,
+  "top_k": 50
+}</code></pre>
+                            <strong>Response:</strong>
+                            <pre><code>{
+  "text": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)",
+  "model_id": 1,
+  "generation_time": 1.23,
+  "timestamp": "2025-06-24T14:00:00.000000"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Training -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">Training</h6>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/training</h6>
+                        <p>List training jobs</p>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/training 🔒</h6>
+                        <p>Create a new training job (requires API key)</p>
+                        <div class="example">
+                            <strong>Request Body:</strong>
+                            <pre><code>{
+  "model_id": 1,
+  "job_name": "My Training Job",
+  "epochs": 3,
+  "learning_rate": 0.0001,
+  "batch_size": 8
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/training/coding 🔒</h6>
+                        <p>Create a coding-specific training job (requires API key)</p>
+                        <div class="example">
+                            <strong>Request Body:</strong>
+                            <pre><code>{
+  "model_id": 1,
+  "job_name": "Python Coding Training",
+  "dataset_id": 1,
+  "epochs": 5,
+  "learning_rate": 0.00005,
+  "batch_size": 4
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Authentication -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">Authentication</h6>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/auth/register</h6>
+                        <p>Register a new user and get API key</p>
+                        <div class="example">
+                            <strong>Request Body:</strong>
+                            <pre><code>{
+  "username": "your_username",
+  "email": "your@email.com",
+  "password": "your_password"
+}</code></pre>
+                            <strong>Response:</strong>
+                            <pre><code>{
+  "user_id": 1,
+  "username": "your_username",
+  "api_key": "llm_abc123...",
+  "message": "User registered successfully"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/auth/keys 🔒</h6>
+                        <p>List your API keys (requires API key)</p>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/auth/keys 🔒</h6>
+                        <p>Create a new API key (requires API key)</p>
+                    </div>
+
+                    <!-- Datasets -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">Coding Datasets</h6>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/datasets</h6>
+                        <p>List available coding datasets</p>
+                        <div class="example">
+                            <strong>Response:</strong>
+                            <pre><code>{
+  "datasets": [
+    {
+      "id": 1,
+      "name": "Python Basics",
+      "description": "Basic Python programming examples",
+      "language": "Python",
+      "dataset_type": "code_completion"
+    }
+  ]
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- Evaluation -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">Evaluation</h6>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-primary me-2">POST</span>/api/models/{model_id}/evaluate 🔒</h6>
+                        <p>Run evaluation on a model (requires API key)</p>
+                    </div>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/evaluations</h6>
+                        <p>List model evaluations</p>
+                    </div>
+
+                    <!-- Statistics -->
+                    <h6 class="border-bottom pb-2 mb-3 mt-4">Statistics</h6>
+
+                    <div class="api-endpoint mb-4">
+                        <h6><span class="badge bg-success me-2">GET</span>/api/statistics</h6>
+                        <p>Get platform statistics</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Handling -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Error Handling</h5>
+                </div>
+                <div class="card-body">
+                    <p>All API errors return JSON responses with an <code>error</code> field:</p>
+                    <div class="example">
+                        <pre><code>{
+  "error": "API key required"
+}</code></pre>
+                    </div>
+                    <div class="mt-3">
+                        <h6>Common HTTP Status Codes:</h6>
+                        <ul>
+                            <li><code>200</code> - Success</li>
+                            <li><code>201</code> - Created</li>
+                            <li><code>400</code> - Bad Request</li>
+                            <li><code>401</code> - Unauthorized (invalid API key)</li>
+                            <li><code>404</code> - Not Found</li>
+                            <li><code>500</code> - Internal Server Error</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rate Limiting -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Rate Limiting</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Default Limits</h6>
+                            <ul>
+                                <li>1000 requests per day per API key</li>
+                                <li>Limits reset daily at midnight UTC</li>
+                                <li>Custom limits can be set per API key</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Rate Limit Headers</h6>
+                            <p>Check your usage in API key management or via the statistics endpoint.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.api-endpoint {
+    border-left: 4px solid #007bff;
+    padding-left: 1rem;
+}
+
+.example {
+    background-color: var(--bs-gray-100);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin-top: 0.5rem;
+}
+
+.example pre {
+    margin-bottom: 0;
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+[data-bs-theme="dark"] .example {
+    background-color: var(--bs-gray-800);
+}
+</style>
+{% endblock %}

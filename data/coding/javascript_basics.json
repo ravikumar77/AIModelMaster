@@ -1,0 +1,22 @@
+[
+  {
+    "instruction": "Write a function to reverse a string",
+    "input": "function reverseString(str) {",
+    "output": "function reverseString(str) {\n    return str.split('').reverse().join('');\n}"
+  },
+  {
+    "instruction": "Create a function to check if a number is prime",
+    "input": "function isPrime(num) {",
+    "output": "function isPrime(num) {\n    if (num <= 1) return false;\n    if (num <= 3) return true;\n    if (num % 2 === 0 || num % 3 === 0) return false;\n    \n    for (let i = 5; i * i <= num; i += 6) {\n        if (num % i === 0 || num % (i + 2) === 0) {\n            return false;\n        }\n    }\n    return true;\n}"
+  },
+  {
+    "instruction": "Write a function to find duplicate elements in an array",
+    "input": "function findDuplicates(arr) {",
+    "output": "function findDuplicates(arr) {\n    const seen = new Set();\n    const duplicates = new Set();\n    \n    for (const item of arr) {\n        if (seen.has(item)) {\n            duplicates.add(item);\n        } else {\n            seen.add(item);\n        }\n    }\n    \n    return Array.from(duplicates);\n}"
+  },
+  {
+    "instruction": "Create a debounce function",
+    "input": "function debounce(func, delay) {",
+    "output": "function debounce(func, delay) {\n    let timeoutId;\n    return function(...args) {\n        clearTimeout(timeoutId);\n        timeoutId = setTimeout(() => func.apply(this, args), delay);\n    };\n}"
+  }
+]

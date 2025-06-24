@@ -1,8 +1,9 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from app import app, db
-from models import LLMModel, TrainingJob, Evaluation, GenerationLog, ModelStatus, TrainingStatus
+from models import LLMModel, TrainingJob, Evaluation, GenerationLog, ModelStatus, TrainingStatus, CodingDataset
 from llm_service import LLMService
 from training_service import TrainingService
+from coding_training import coding_service
 import json
 from datetime import datetime
 
@@ -86,6 +87,8 @@ def new_training():
         lora_r = int(request.form.get('lora_r', 8))
         lora_alpha = int(request.form.get('lora_alpha', 32))
         lora_dropout = float(request.form.get('lora_dropout', 0.05))
+        dataset_id = request.form.get('dataset_id')
+        training_type = request.form.get('training_type', 'general')
         
         job = TrainingJob(
             model_id=model_id,
@@ -95,7 +98,9 @@ def new_training():
             batch_size=batch_size,
             lora_r=lora_r,
             lora_alpha=lora_alpha,
-            lora_dropout=lora_dropout
+            lora_dropout=lora_dropout,
+            dataset_id=int(dataset_id) if dataset_id and dataset_id != 'none' else None,
+            training_type=training_type
         )
         
         db.session.add(job)
@@ -109,7 +114,8 @@ def new_training():
     
     models = LLMModel.query.filter_by(status=ModelStatus.AVAILABLE).all()
     jobs = TrainingJob.query.paginate(page=1, per_page=10, error_out=False)
-    return render_template('training.html', models=models, jobs=jobs, show_form=True)
+    datasets = coding_service.get_datasets()
+    return render_template('training.html', models=models, jobs=jobs, datasets=datasets, show_form=True)
 
 @app.route('/training/<int:job_id>')
 def training_detail(job_id):
