@@ -116,7 +116,11 @@ class LLMService:
                 elif temperature < 0.3:
                     base_response += " (Conservative generation mode)"
                     
-                return base_response[:max_length]
+                return {
+                    'text': base_response[:max_length],
+                    'model_id': model_id,
+                    'tokens_generated': len(base_response.split())
+                }
             
             # Tokenize input
             inputs = tokenizer.encode(prompt, return_tensors="pt").to(self.device)

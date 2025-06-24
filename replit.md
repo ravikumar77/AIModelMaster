@@ -101,7 +101,36 @@ This is a comprehensive Flask-based LLM development platform that provides end-t
 - June 24, 2025: Added complete LLM development pipeline with training scripts, LoRA fine-tuning, RLHF support
 - June 24, 2025: Implemented FastAPI backend, ONNX export, evaluation metrics, and sample datasets
 - June 24, 2025: Created comprehensive project structure with config management and Triton deployment support
+- June 24, 2025: Added user authentication system with API keys and rate limiting
+- June 24, 2025: Implemented coding-specific training datasets and specialized training endpoints
+- June 24, 2025: Fixed inference issues and created complete API documentation with working examples
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## API Usage Guide
+
+### Authentication Flow
+1. **Register**: POST `/api/auth/register` with username, email, password
+2. **Get API Key**: Save the `api_key` from registration response
+3. **Authenticate**: Include `X-API-Key: your_key` header in requests
+4. **Monitor Usage**: Check rate limits via GET `/api/auth/keys`
+
+### Key Features
+- **Rate Limiting**: 1000 requests/day per API key (customizable)
+- **Coding Training**: Specialized endpoints for code-specific fine-tuning
+- **Model Access**: Generate text, create models, run evaluations
+- **Dataset Management**: Python, JavaScript, and bug-fixing datasets
+
+### Quick Examples
+```bash
+# Register user
+curl -X POST http://localhost:5000/api/auth/register -H 'Content-Type: application/json' -d '{"username":"user","email":"user@example.com","password":"pass"}'
+
+# Generate text (requires API key)
+curl -X POST http://localhost:5000/api/models/1/generate -H 'X-API-Key: your_key' -H 'Content-Type: application/json' -d '{"prompt":"def fibonacci(n):","max_length":100}'
+
+# Create coding training job
+curl -X POST http://localhost:5000/api/training/coding -H 'X-API-Key: your_key' -H 'Content-Type: application/json' -d '{"model_id":1,"job_name":"Python Training","dataset_id":1}'
+```

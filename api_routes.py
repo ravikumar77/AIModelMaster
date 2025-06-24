@@ -1,7 +1,7 @@
 """
 API routes for LLM platform - RESTful endpoints for external access
 """
-from flask import jsonify, request
+from flask import jsonify, request, g
 from app import app, db
 from models import LLMModel, TrainingJob, Evaluation, GenerationLog, ModelStatus, TrainingStatus, User, APIKey, CodingDataset
 from llm_service import LLMService
