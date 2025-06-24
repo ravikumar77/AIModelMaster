@@ -1,0 +1,178 @@
+Perfect! Below is a **complete AI Agent Prompt** to **develop, train, fine-tune, and serve a custom LLM**, integrating the technologies you requested:
+
+---
+
+## 🧠 Prompt: Build and Train a Custom LLM using Python, PyTorch, Hugging Face, LoRA, RLHF, ONNX, Triton, FastAPI
+
+> I want to develop a complete, end-to-end, modular Large Language Model (LLM) system using modern tooling. The system must be:
+
+* 🚀 Built with **Python + PyTorch**
+* 📦 Powered by **Hugging Face Transformers + Datasets**
+* ⚙️ Fine-tuned using **LoRA/QLoRA**
+* 🧠 Optionally aligned using **Reinforcement Learning with Human Feedback (RLHF)**
+* 🧪 Trained on custom data with configurable hyperparameters
+* 🔄 Exported via **ONNX**
+* ⚡ Served using **Triton Inference Server**
+* 🌐 Exposed via a **FastAPI** backend
+
+---
+
+### 📁 Folder Structure
+
+```
+llm_project/
+├── config/
+│   └── model_config.yaml
+├── data/
+├── models/
+│   ├── base/
+│   ├── finetuned/
+│   └── onnx/
+├── scripts/
+│   ├── train.py               # Full training from scratch
+│   ├── fine_tune_lora.py      # LoRA/QLoRA-based fine-tuning
+│   ├── export_to_onnx.py
+│   ├── generate.py            # Inference script
+│   ├── evaluate.py            # Evaluation: perplexity, BLEU, etc.
+│   └── rlhf/
+│       ├── reward_model.py
+│       └── ppo_trainer.py
+├── api/
+│   └── app.py                 # FastAPI backend
+├── triton_config/
+│   └── config.pbtxt
+├── requirements.txt
+└── README.md
+```
+
+---
+
+### 🔧 1. Environment and Dependencies
+
+```
+transformers
+datasets
+peft
+trl
+accelerate
+bitsandbytes
+torch
+onnx
+optimum
+onnxruntime
+fastapi
+uvicorn
+tritonclient
+wandb
+```
+
+---
+
+### 🏗️ 2. Model Training (`train.py`)
+
+* Load a transformer model (`GPT2`, `LLaMA`, or similar) from Hugging Face
+* Load text data from `/data` and tokenize with a block size
+* Use PyTorch + Hugging Face `Trainer` API
+* Track metrics like `loss`, `perplexity`, `tokens/sec` with `wandb`
+* Train on GPU with AMP (mixed precision)
+* Save checkpoints and final model
+
+---
+
+### 🔧 3. Fine-Tuning with LoRA or QLoRA (`fine_tune_lora.py`)
+
+* Use `peft` + `bitsandbytes` for memory-efficient tuning
+* Load base model, inject LoRA adapters, and train on smaller custom dataset
+* Optionally support QLoRA (quantized weights)
+
+```python
+from peft import get_peft_model, LoraConfig, TaskType
+
+config = LoraConfig(
+    r=8, lora_alpha=32, target_modules=["q_proj", "v_proj"],
+    lora_dropout=0.05, bias="none", task_type=TaskType.CAUSAL_LM
+)
+model = get_peft_model(base_model, config)
+```
+
+---
+
+### 🧠 4. RLHF Pipeline (`rlhf/`)
+
+* Train a **reward model** on preference data using `trl`
+* Use PPOTrainer (from Hugging Face `trl`) to align LLM with human feedback
+* Log rewards and performance metrics
+* Sample preference dataset included for test purposes
+
+---
+
+### 🔄 5. Export to ONNX (`export_to_onnx.py`)
+
+* Export PyTorch model to ONNX format using `optimum`
+* Validate ONNX model with `onnxruntime`
+* Generate Triton-compatible `config.pbtxt`
+
+---
+
+### ⚡ 6. Inference Script (`generate.py`)
+
+* Load model and tokenizer (Torch or ONNX)
+* Accept prompt from CLI or file
+* Generate text using:
+
+  * `top_k`, `top_p`, `temperature`, `max_length`
+* Stream output token-by-token
+
+---
+
+### 🌐 7. FastAPI Backend (`api/app.py`)
+
+* `/generate`: Accepts JSON body with `prompt`, generation settings
+* `/health`: Health check
+* Optionally uses Triton client to run inference on the ONNX model
+
+```python
+@app.post("/generate")
+async def generate_text(req: PromptRequest):
+    # Run inference using ONNX or PyTorch model
+    return {"response": result}
+```
+
+---
+
+### 🧪 8. Evaluation Script (`evaluate.py`)
+
+* Compute:
+
+  * Perplexity
+  * BLEU
+  * ROUGE (optional)
+  * Response diversity / length
+
+---
+
+### 📤 9. Deployment
+
+* Use **Triton Inference Server** for high-throughput, low-latency inference
+* ONNX model and tokenizer exported to `/models/onnx/`
+* `FastAPI` app can serve requests and proxy to Triton backend
+
+---
+
+### ✅ Deliverables
+
+* 📦 Full Python-based LLM pipeline: train → fine-tune → align → evaluate → deploy
+* 🚀 Fast inference via ONNX + Triton
+* 🛠️ Efficient fine-tuning with LoRA/QLoRA
+* 🌐 Serving via FastAPI for prompt completions
+
+---
+
+Would you like me to generate:
+
+1. `train.py` for model training
+2. `fine_tune_lora.py` for LoRA-based fine-tuning
+3. `FastAPI` inference endpoint with Triton
+4. Docker + Deployment pipeline
+
+Let me know which part you'd like first!
