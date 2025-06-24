@@ -4,18 +4,18 @@ from sqlalchemy import Enum
 import enum
 
 class ModelStatus(enum.Enum):
-    AVAILABLE = "available"
-    TRAINING = "training"
-    FINE_TUNING = "fine_tuning"
-    EXPORTING = "exporting"
-    ERROR = "error"
+    AVAILABLE = "AVAILABLE"
+    TRAINING = "TRAINING"
+    FINE_TUNING = "FINE_TUNING"
+    EXPORTING = "EXPORTING"
+    ERROR = "ERROR"
 
 class TrainingStatus(enum.Enum):
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    PAUSED = "paused"
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    PAUSED = "PAUSED"
 
 class LLMModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
