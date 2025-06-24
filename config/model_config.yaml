@@ -1,0 +1,98 @@
+# Model Configuration for LLM Development Platform
+
+# Base Models Configuration
+base_models:
+  distilgpt2:
+    size: "82M"
+    context_length: 1024
+    architecture: "GPT"
+    use_case: "General text generation"
+    
+  gpt2:
+    size: "124M"
+    context_length: 1024
+    architecture: "GPT"
+    use_case: "General text generation"
+    
+  "microsoft/DialoGPT-small":
+    size: "117M"
+    context_length: 1024
+    architecture: "GPT"
+    use_case: "Conversational AI"
+    
+  "facebook/opt-125m":
+    size: "125M"
+    context_length: 2048
+    architecture: "OPT"
+    use_case: "General text generation"
+    
+  "EleutherAI/gpt-neo-125M":
+    size: "125M"
+    context_length: 2048
+    architecture: "GPT-Neo"
+    use_case: "General text generation"
+
+# Training Configuration
+training:
+  default_epochs: 3
+  default_learning_rate: 0.0001
+  default_batch_size: 8
+  max_epochs: 20
+  min_learning_rate: 0.00001
+  max_learning_rate: 0.01
+  supported_batch_sizes: [2, 4, 8, 16, 32]
+
+# LoRA Configuration
+lora:
+  default_r: 8
+  default_alpha: 32
+  default_dropout: 0.05
+  supported_target_modules:
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+# Evaluation Metrics
+evaluation:
+  metrics:
+    - perplexity
+    - bleu_score
+    - rouge_score
+    - response_diversity
+    - avg_response_length
+  benchmarks:
+    excellent_perplexity: 15.0
+    good_perplexity: 25.0
+    excellent_bleu: 0.7
+    good_bleu: 0.4
+    excellent_rouge: 0.7
+    good_rouge: 0.4
+
+# Export Configuration
+export:
+  onnx:
+    opset_version: 11
+    optimization_levels:
+      - basic
+      - optimized
+      - quantized
+    target_platforms:
+      - cpu
+      - gpu
+      - edge
+
+# API Configuration
+api:
+  generation:
+    default_temperature: 0.7
+    default_max_length: 100
+    default_top_p: 0.9
+    default_top_k: 50
+    max_temperature: 2.0
+    min_temperature: 0.1
+    max_length: 1000
+    min_length: 10

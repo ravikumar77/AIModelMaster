@@ -1,0 +1,42 @@
+[
+  {
+    "prompt": "Explain the concept of gravity",
+    "reference": "Gravity is a fundamental force of nature that causes objects with mass to attract each other. The more massive an object, the stronger its gravitational pull. This force keeps planets in orbit around stars and causes objects to fall toward Earth's surface."
+  },
+  {
+    "prompt": "What are the benefits of reading books?",
+    "reference": "Reading books improves vocabulary, enhances critical thinking skills, reduces stress, increases knowledge, improves focus and concentration, enhances empathy by exposing readers to different perspectives, and provides entertainment while stimulating the imagination."
+  },
+  {
+    "prompt": "How do vaccines work?",
+    "reference": "Vaccines work by training the immune system to recognize and fight specific diseases. They contain weakened or inactive parts of a pathogen that trigger an immune response, creating memory cells that can quickly respond if the person is exposed to the actual disease in the future."
+  },
+  {
+    "prompt": "Describe the process of making coffee",
+    "reference": "Coffee is made by grinding coffee beans, heating water to the optimal temperature (195-205°F), and extracting flavors through various brewing methods such as drip, French press, or espresso. The ground coffee is combined with hot water for a specific time to extract oils and compounds that create the final beverage."
+  },
+  {
+    "prompt": "What is climate change?",
+    "reference": "Climate change refers to long-term shifts in global or regional climate patterns, primarily caused by increased levels of greenhouse gases in the atmosphere due to human activities. This leads to rising temperatures, changing precipitation patterns, and more frequent extreme weather events."
+  },
+  {
+    "prompt": "How do you learn a new language effectively?",
+    "reference": "Effective language learning involves consistent practice, immersion through media and conversation, learning vocabulary in context, understanding grammar patterns, regular speaking practice, using spaced repetition for memorization, and setting achievable goals while maintaining motivation."
+  },
+  {
+    "prompt": "What is the scientific method?",
+    "reference": "The scientific method is a systematic approach to understanding the natural world through observation, hypothesis formation, experimentation, data analysis, and conclusion drawing. It involves making predictions, testing them through controlled experiments, and refining theories based on evidence."
+  },
+  {
+    "prompt": "Explain the importance of sleep",
+    "reference": "Sleep is crucial for physical and mental health. It allows the body to repair tissues, consolidate memories, regulate hormones, boost immune function, and restore energy. Adequate sleep improves cognitive performance, emotional regulation, and overall well-being while reducing disease risk."
+  },
+  {
+    "prompt": "How does the internet work?",
+    "reference": "The internet is a global network of interconnected computers that communicate using standardized protocols. Data is broken into packets, routed through various network devices, and reassembled at the destination. Internet service providers connect users to this network infrastructure."
+  },
+  {
+    "prompt": "What makes a healthy diet?",
+    "reference": "A healthy diet includes a variety of foods from all food groups: fruits, vegetables, whole grains, lean proteins, and healthy fats. It emphasizes moderation, adequate hydration, limiting processed foods and added sugars, and maintaining appropriate portion sizes for individual needs."
+  }
+]

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Flask-based web application for managing Large Language Model (LLM) development workflows. The platform provides a comprehensive interface for creating, training, evaluating, and deploying language models with features including model management, fine-tuning with LoRA, evaluation metrics, text generation, and model export capabilities.
+This is a comprehensive Flask-based LLM development platform that provides end-to-end workflows for creating, training, fine-tuning, evaluating, and deploying language models. The platform includes web interface, command-line tools, FastAPI backend, RLHF support, ONNX export, and Triton deployment capabilities. It implements the complete technology stack specified in the requirements: Python + PyTorch, Hugging Face Transformers, LoRA/QLoRA fine-tuning, RLHF with reward models and PPO, model evaluation, ONNX export, and FastAPI serving.
 
 ## System Architecture
 
@@ -97,7 +97,10 @@ This is a Flask-based web application for managing Large Language Model (LLM) de
 - **Python Version**: Python 3.11 with ML-optimized package sources
 
 ## Changelog
-- June 24, 2025. Initial setup
+- June 24, 2025: Initial Flask web platform setup with model management, training simulation, and inference
+- June 24, 2025: Added complete LLM development pipeline with training scripts, LoRA fine-tuning, RLHF support
+- June 24, 2025: Implemented FastAPI backend, ONNX export, evaluation metrics, and sample datasets
+- June 24, 2025: Created comprehensive project structure with config management and Triton deployment support
 
 ## User Preferences
 

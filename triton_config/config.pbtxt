@@ -1,0 +1,64 @@
+name: "llm_model"
+platform: "onnxruntime_onnx"
+max_batch_size: 8
+
+input [
+  {
+    name: "input_ids"
+    data_type: TYPE_INT64
+    dims: [ -1, 512 ]
+  },
+  {
+    name: "attention_mask"
+    data_type: TYPE_INT64
+    dims: [ -1, 512 ]
+  }
+]
+
+output [
+  {
+    name: "logits"
+    data_type: TYPE_FP32
+    dims: [ -1, 512, -1 ]
+  }
+]
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 2, 4, 8 ]
+  max_queue_delay_microseconds: 100000
+}
+
+optimization {
+  enable_pinned_input: true
+  enable_pinned_output: true
+  gather_kernel_buffer_threshold: 0
+  eager_batching: true
+}
+
+model_warmup [
+  {
+    name: "sample_request"
+    batch_size: 1
+    inputs [
+      {
+        key: "input_ids"
+        value: {
+          zero_data: true
+        }
+      },
+      {
+        key: "attention_mask"
+        value: {
+          zero_data: true
+        }
+      }
+    ]
+  }
+]
