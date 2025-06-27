@@ -58,6 +58,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['experiments.index', 'experiments.detail', 'experiments.compare'] %}active{% endif %}" href="{{ url_for('experiments.index') }}">
+                            <i data-feather="activity" class="me-1"></i>Experiments
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'evaluation' %}active{% endif %}" href="{{ url_for('evaluation') }}">
                             <i data-feather="bar-chart" class="me-1"></i>Evaluation
                         </a>

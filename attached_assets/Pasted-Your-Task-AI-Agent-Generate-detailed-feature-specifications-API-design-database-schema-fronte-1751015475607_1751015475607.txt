@@ -1,0 +1,189 @@
+Your Task (AI Agent):
+Generate detailed feature specifications, API design, database schema, frontend Angular component outlines, and UX wireframes for the following unique & advanced features that I want to add:
+
+🔥 Unique & Advanced Features for My LLM Platform:
+1. 🧠 Prompt Playground
+Allow users to craft, test, and save prompts with adjustable parameters: temperature, top-k, top-p, etc.
+
+Support prompt templates, few-shot examples, and chat history context
+
+Export prompts as JSON or YAML for external API calls.
+
+2. 🔍 Experiment Tracking & Comparison
+Save full experiment configs: hyperparameters, dataset paths, runtime settings.
+
+Show visual comparison of:
+
+Loss curves
+
+Perplexity trends
+
+BLEU/ROUGE/LAMBADA benchmarks
+
+Allow users to tag, favorite, and archive training runs.
+
+3. 🛠️ Fine-Tuning Job Scheduler
+Support queue-based training jobs
+
+Allow users to schedule training for specific time slots (e.g., off-peak GPU time)
+
+Show estimated training completion time
+
+4. 📊 Token-Level Metrics & Attention Visualization
+Display token-by-token log probabilities for generations.
+
+Visualize attention maps (similar to TransformerLens or BertViz).
+
+Allow users to step through each attention layer/head for debugging.
+
+5. ⚡ Multi-Model Inference Routing
+Let users select inference backend at runtime:
+
+PyTorch direct
+
+ONNX Runtime
+
+Triton Inference Server
+
+Support A/B testing between models (e.g., GPT-2 vs LoRA-fine-tuned model)
+
+6. 📈 Resource Usage Monitoring (GPU/Disk/Memory)
+Show real-time GPU memory utilization charts
+
+Per-job GPU allocation stats
+
+Total disk usage per model/dataset
+
+Optional: Cloud cost estimation for each job
+
+7. 🔒 Dataset Versioning & Lineage Tracking
+Allow users to upload datasets and auto-version them
+
+Track which model was trained on which dataset version
+
+Data lineage graph: Dataset → Training Run → Model → Export → Deployment
+
+8. 🔎 Bias & Toxicity Evaluation Dashboard
+Run each model through predefined bias, fairness, and toxicity checks
+
+Provide scorecards (bias towards gender, ethnicity, etc.)
+
+Link to sample problematic generations for review and correction
+
+9. 🛡️ Content Filtering & Safety Layer
+Add configurable safety filters at inference time:
+
+Offensive language filter
+
+PII detection
+
+Length cutoffs
+
+Allow users to toggle filtering ON/OFF per generation
+
+10. 🔄 RLHF Feedback Loop UI
+Let human annotators rank outputs from multiple generations
+
+Provide UI for human reward scoring, feeding directly into the RLHF training pipeline
+
+Track annotator performance, agreement rate, and feedback history
+
+11. 🚀 Model Deployment Hub
+Allow users to push models to multiple environments:
+
+Local deployment
+
+Cloud-hosted inference
+
+Hugging Face Hub
+
+ONNX Model Zoo
+
+Generate auto-deployable Dockerfiles per model
+
+Deployment status and logs tracking
+
+12. 🧪 Custom Metric Plugin Support
+Let users register their own custom evaluation metrics
+
+Support Python-based or YAML-configured metric plugins
+
+Example: Factual Consistency, Toxicity Score, BLEURT, GLEU, etc.
+
+13. 🗃️ Data Curation & Augmentation Tools
+Provide tools for:
+
+Cleaning noisy datasets
+
+Data augmentation (paraphrasing, synthetic text generation)
+
+Automated low-quality sample filtering based on heuristics
+
+14. 🕹️ LoRA Adapter Manager
+Let users:
+
+Upload LoRA adapters
+
+Enable/disable adapters
+
+Compare inference speed and quality between base model and LoRA-augmented model
+
+Triton Model
+Export for Triton Inference Server deployment
+
+TensorFlow Lite
+Export for mobile and edge device deployment
+
+HuggingFace Hub
+Push model to HuggingFace Model Hub
+
+15. 🌍 Multi-language & Multi-modal Support
+Support for text + image or text + audio models (future roadmap)
+
+Let users select language-specific models (English, Hindi, etc.)
+
+🏁 Bonus: General UX & Developer Experience Improvements
+Dark/Light Theme toggle
+
+Notification system for:
+
+Training completion
+
+Failed jobs
+
+New evaluation reports
+
+REST API & SDK Auto-generator
+
+For .NET, Python, TypeScript
+
+Allow external apps to integrate programmatically
+
+✅ For Each Feature: Provide the Following Details:
+Feature Summary
+
+Detailed Functional Specification
+
+Backend API Endpoints (Request & Response Schema in JSON)
+
+Frontend Angular Component/Page Design (Page Names, Dialogs, Forms)
+
+Database Schema (Tables or NoSQL collections with fields)
+
+Recommended Python packages / .NET libraries / NPM libraries
+
+Optional: UI Layout Wireframe (text description is fine)
+
+✅ Technical Constraints:
+Use FastAPI or .NET Core Web API for backend examples
+
+Use Angular for frontend examples
+
+All LLM processing pipelines should integrate with PyTorch, Hugging Face Transformers, CUDA, ONNX, and Triton Inference Server
+
+Fine-tuning must support LoRA, QLoRA, and optionally RLHF
+
+✅ Start generating feature-wise deliverables. Begin with Prompt Playground first.
+
+After each module, I will review and then ask for the next one.
+

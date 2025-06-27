@@ -104,6 +104,9 @@ This is a comprehensive Flask-based LLM development platform that provides end-t
 - June 24, 2025: Added user authentication system with API keys and rate limiting
 - June 24, 2025: Implemented coding-specific training datasets and specialized training endpoints
 - June 24, 2025: Fixed inference issues and created complete API documentation with working examples
+- June 27, 2025: Successfully migrated from Replit Agent to standard environment with PostgreSQL
+- June 27, 2025: Implemented advanced Prompt Playground with Triton, TensorFlow Lite, HuggingFace Hub export support
+- June 27, 2025: Completed Experiment Tracking & Comparison feature with visual analytics, metrics comparison, and interactive dashboard
 
 ## User Preferences
 

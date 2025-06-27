@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block title %}Experiment Tracking & Comparison{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.experiment-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.experiment-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.experiment-card.status-pending { border-left-color: #6c757d; }
+.experiment-card.status-running { border-left-color: #0d6efd; }
+.experiment-card.status-completed { border-left-color: #198754; }
+.experiment-card.status-failed { border-left-color: #dc3545; }
+.experiment-card.status-archived { border-left-color: #fd7e14; }
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.comparison-checkbox {
+    transform: scale(1.2);
+}
+
+#comparisonToolbar {
+    transition: all 0.3s ease;
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+#comparisonToolbar.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.tag-cloud .badge {
+    margin: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tag-cloud .badge:hover {
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i data-feather="activity" class="me-2"></i>
+                        Experiment Tracking & Comparison
+                    </h1>
+                    <p class="text-muted mb-0">Track, analyze, and compare your ML experiments</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createExperimentModal">
+                        <i data-feather="plus" class="me-2"></i>New Experiment
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i data-feather="filter" class="me-2"></i>Filters
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 300px;">
+                            <h6 class="mb-3">Filter Experiments</h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Statuses</option>
+                                    <option value="PENDING" {% if current_status == 'PENDING' %}selected{% endif %}>Pending</option>
+                                    <option value="RUNNING" {% if current_status == 'RUNNING' %}selected{% endif %}>Running</option>
+                                    <option value="COMPLETED" {% if current_status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                                    <option value="FAILED" {% if current_status == 'FAILED' %}selected{% endif %}>Failed</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Group</label>
+                                <select class="form-select" id="groupFilter">
+                                    <option value="">All Groups</option>
+                                    {% for group in all_groups %}
+                                    <option value="{{ group }}" {% if current_group == group %}selected{% endif %}>{{ group }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Tags</label>
+                                <div class="tag-cloud">
+                                    {% for tag in all_tags %}
+                                    <span class="badge bg-secondary tag-filter" data-tag="{{ tag }}">{{ tag }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary btn-sm" onclick="applyFilters()">Apply Filters</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i data-feather="activity" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3 class="mb-1">{{ stats.total_experiments or 0 }}</h3>
+                    <p class="mb-0">Total Experiments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i data-feather="play-circle" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3 class="mb-1">{{ stats.running_experiments or 0 }}</h3>
+                    <p class="mb-0">Running</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i data-feather="check-circle" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3 class="mb-1">{{ stats.completed_experiments or 0 }}</h3>
+                    <p class="mb-0">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body text-center">
+                    <i data-feather="clock" class="mb-2" style="width: 48px; height: 48px;"></i>
+                    <h3 class="mb-1">{{ stats.total_gpu_hours or 0 }}h</h3>
+                    <p class="mb-0">GPU Hours</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison Toolbar (Hidden by default) -->
+    <div id="comparisonToolbar" class="alert alert-info mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <strong><span id="selectedCount">0</span> experiments selected</strong>
+                <span class="text-muted ms-2">Select 2 or more experiments to compare</span>
+            </div>
+            <div>
+                <button class="btn btn-primary btn-sm" id="compareBtn" onclick="compareSelected()" disabled>
+                    <i data-feather="bar-chart-2" class="me-2"></i>Compare Experiments
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
+                    Clear Selection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Experiments Grid -->
+    <div class="row" id="experimentsGrid">
+        {% if experiments %}
+            {% for experiment in experiments %}
+            <div class="col-lg-6 col-xl-4 mb-4 experiment-item">
+                <div class="card experiment-card status-{{ experiment.status.value.lower() }} h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" class="form-check-input comparison-checkbox me-2" 
+                                   value="{{ experiment.id }}" onchange="updateSelection()">
+                            <h6 class="mb-0">{{ experiment.name }}</h6>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if experiment.is_favorite %}
+                            <i data-feather="star" class="text-warning" style="width: 16px; height: 16px; fill: currentColor;"></i>
+                            {% endif %}
+                            <span class="badge 
+                                {% if experiment.status.value == 'PENDING' %}bg-secondary{% endif %}
+                                {% if experiment.status.value == 'RUNNING' %}bg-primary{% endif %}
+                                {% if experiment.status.value == 'COMPLETED' %}bg-success{% endif %}
+                                {% if experiment.status.value == 'FAILED' %}bg-danger{% endif %}
+                                {% if experiment.status.value == 'ARCHIVED' %}bg-warning{% endif %}">
+                                {{ experiment.status.value }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">{{ experiment.description or 'No description' }}</p>
+                        
+                        <!-- Experiment Metrics Preview -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="text-muted small">GPU Hours</div>
+                                    <div class="fw-bold">{{ experiment.gpu_hours or 0 }}h</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center">
+                                    <div class="text-muted small">Cost Est.</div>
+                                    <div class="fw-bold">${{ experiment.estimated_cost or 0 }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline -->
+                        <div class="small text-muted mb-3">
+                            <div>Created: {{ experiment.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            {% if experiment.started_at %}
+                            <div>Started: {{ experiment.started_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            {% endif %}
+                            {% if experiment.completed_at %}
+                            <div>Completed: {{ experiment.completed_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('experiments.detail', experiment_id=experiment.id) }}" 
+                                   class="btn btn-outline-primary">
+                                    <i data-feather="eye" style="width: 14px; height: 14px;"></i>
+                                    View
+                                </a>
+                                {% if experiment.status.value == 'PENDING' %}
+                                <button class="btn btn-outline-success" onclick="startExperiment({{ experiment.id }})">
+                                    <i data-feather="play" style="width: 14px; height: 14px;"></i>
+                                    Start
+                                </button>
+                                {% elif experiment.status.value == 'RUNNING' %}
+                                <button class="btn btn-outline-warning" onclick="stopExperiment({{ experiment.id }})">
+                                    <i data-feather="square" style="width: 14px; height: 14px;"></i>
+                                    Stop
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                        type="button" data-bs-toggle="dropdown">
+                                    <i data-feather="more-horizontal" style="width: 14px; height: 14px;"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="toggleFavorite({{ experiment.id }})">
+                                            <i data-feather="star" class="me-2" style="width: 14px; height: 14px;"></i>
+                                            {% if experiment.is_favorite %}Remove from{% else %}Add to{% endif %} Favorites
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="archiveExperiment({{ experiment.id }})">
+                                            <i data-feather="archive" class="me-2" style="width: 14px; height: 14px;"></i>
+                                            Archive
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i data-feather="activity" style="width: 64px; height: 64px;" class="text-muted mb-3"></i>
+                <h4 class="text-muted">No experiments found</h4>
+                <p class="text-muted">Create your first experiment to start tracking ML training runs</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExperimentModal">
+                    <i data-feather="plus" class="me-2"></i>Create First Experiment
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create Experiment Modal -->
+<div class="modal fade" id="createExperimentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Experiment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="createExperimentForm" onsubmit="createExperiment(event)">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Experiment Name</label>
+                                <input type="text" class="form-control" name="name" required 
+                                       placeholder="e.g., GPT-2 Fine-tuning v1.0">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Model</label>
+                                <select class="form-select" name="model_id" required>
+                                    <option value="">Select Model</option>
+                                    {% for model in models %}
+                                    <option value="{{ model.id }}">{{ model.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" 
+                                  placeholder="Describe the purpose and goals of this experiment"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Dataset (Optional)</label>
+                                <select class="form-select" name="dataset_id">
+                                    <option value="">No Dataset</option>
+                                    {% for dataset in datasets %}
+                                    <option value="{{ dataset.id }}">{{ dataset.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Experiment Group</label>
+                                <input type="text" class="form-control" name="experiment_group" 
+                                       placeholder="e.g., baseline_experiments">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hyperparameters -->
+                    <h6 class="mb-3">Hyperparameters</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Learning Rate</label>
+                                <input type="number" class="form-control" name="learning_rate" 
+                                       value="0.0001" step="0.00001" min="0">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Batch Size</label>
+                                <input type="number" class="form-control" name="batch_size" 
+                                       value="8" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Epochs</label>
+                                <input type="number" class="form-control" name="epochs" 
+                                       value="20" min="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">LoRA Rank (r)</label>
+                                <input type="number" class="form-control" name="lora_r" 
+                                       value="8" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">LoRA Alpha</label>
+                                <input type="number" class="form-control" name="lora_alpha" 
+                                       value="32" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">LoRA Dropout</label>
+                                <input type="number" class="form-control" name="lora_dropout" 
+                                       value="0.05" step="0.01" min="0" max="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tags</label>
+                        <input type="text" class="form-control" name="tags" 
+                               placeholder="e.g., baseline, lora, gpt2 (comma-separated)">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Experiment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize feather icons
+feather.replace();
+
+let selectedExperiments = new Set();
+
+function updateSelection() {
+    selectedExperiments.clear();
+    document.querySelectorAll('.comparison-checkbox:checked').forEach(cb => {
+        selectedExperiments.add(cb.value);
+    });
+    
+    const count = selectedExperiments.size;
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('compareBtn').disabled = count < 2;
+    
+    const toolbar = document.getElementById('comparisonToolbar');
+    if (count > 0) {
+        toolbar.classList.add('show');
+    } else {
+        toolbar.classList.remove('show');
+    }
+}
+
+function clearSelection() {
+    document.querySelectorAll('.comparison-checkbox').forEach(cb => cb.checked = false);
+    updateSelection();
+}
+
+function compareSelected() {
+    if (selectedExperiments.size < 2) {
+        alert('Please select at least 2 experiments to compare');
+        return;
+    }
+    
+    const params = new URLSearchParams();
+    selectedExperiments.forEach(id => params.append('experiments', id));
+    
+    window.location.href = `/experiments/compare?${params.toString()}`;
+}
+
+function createExperiment(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch('/experiments/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/experiments/${data.experiment_id}`;
+        } else {
+            alert('Error creating experiment: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating experiment');
+    });
+}
+
+function startExperiment(experimentId) {
+    fetch(`/experiments/${experimentId}/start`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error starting experiment: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error starting experiment');
+    });
+}
+
+function stopExperiment(experimentId) {
+    fetch(`/experiments/${experimentId}/stop`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error stopping experiment: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error stopping experiment');
+    });
+}
+
+function toggleFavorite(experimentId) {
+    fetch(`/experiments/${experimentId}/favorite`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error updating favorite: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating favorite');
+    });
+}
+
+function archiveExperiment(experimentId) {
+    if (confirm('Are you sure you want to archive this experiment?')) {
+        fetch(`/experiments/${experimentId}/archive`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error archiving experiment: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error archiving experiment');
+        });
+    }
+}
+
+function applyFilters() {
+    const status = document.getElementById('statusFilter').value;
+    const group = document.getElementById('groupFilter').value;
+    
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (group) params.append('group', group);
+    
+    window.location.href = `/experiments/?${params.toString()}`;
+}
+
+function clearFilters() {
+    window.location.href = '/experiments/';
+}
+
+// Tag filtering
+document.querySelectorAll('.tag-filter').forEach(tag => {
+    tag.addEventListener('click', function() {
+        const tagValue = this.getAttribute('data-tag');
+        const params = new URLSearchParams();
+        params.append('tag', tagValue);
+        window.location.href = `/experiments/?${params.toString()}`;
+    });
+});
+</script>
+{% endblock %}

@@ -33,9 +33,13 @@ with app.app_context():
     from routes import init_routes
     from prompt_playground_routes import init_prompt_playground_routes
     from prompt_playground_service import prompt_playground_service
+    from experiment_routes import experiment_bp
+    from experiment_tracking_service import experiment_tracking_service
+    
     # Initialize routes
     init_routes(app)
     init_prompt_playground_routes(app)
+    app.register_blueprint(experiment_bp)
 
     db.create_all()
     
@@ -44,3 +48,9 @@ with app.app_context():
         prompt_playground_service.initialize_default_templates()
     except Exception as e:
         print(f"Warning: Could not initialize default templates: {e}")
+    
+    # Initialize sample experiments
+    try:
+        experiment_tracking_service.initialize_sample_experiments()
+    except Exception as e:
+        print(f"Warning: Could not initialize sample experiments: {e}")
