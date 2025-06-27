@@ -1,7 +1,7 @@
-from app import db
 from datetime import datetime
 from sqlalchemy import Enum
 import enum
+from db import db
 
 class ModelStatus(enum.Enum):
     AVAILABLE = "AVAILABLE"
@@ -18,6 +18,7 @@ class TrainingStatus(enum.Enum):
     PAUSED = "PAUSED"
 
 class LLMModel(db.Model):
+    __tablename__ = 'llm_model'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     base_model = db.Column(db.String(128), nullable=False)
@@ -33,6 +34,7 @@ class LLMModel(db.Model):
     evaluations = db.relationship('Evaluation', backref='model', lazy=True)
 
 class TrainingJob(db.Model):
+    __tablename__ = 'training_job'
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey('llm_model.id'), nullable=False)
     job_name = db.Column(db.String(128), nullable=False)
@@ -54,6 +56,7 @@ class TrainingJob(db.Model):
     training_type = db.Column(db.String(64), default='general')  # general, coding, instruction_following
 
 class Evaluation(db.Model):
+    __tablename__ = 'evaluation'
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey('llm_model.id'), nullable=False)
     eval_name = db.Column(db.String(128), nullable=False)
@@ -66,6 +69,7 @@ class Evaluation(db.Model):
     eval_data = db.Column(db.Text)  # JSON string for detailed metrics
 
 class GenerationLog(db.Model):
+    __tablename__ = 'generation_log'
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(db.Integer, db.ForeignKey('llm_model.id'), nullable=False)
     prompt = db.Column(db.Text, nullable=False)
@@ -82,6 +86,7 @@ class GenerationLog(db.Model):
     model = db.relationship('LLMModel', backref='generation_logs')
 
 class User(db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -93,6 +98,7 @@ class User(db.Model):
     api_keys = db.relationship('APIKey', backref='user', lazy=True)
 
 class APIKey(db.Model):
+    __tablename__ = 'api_key'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     key_name = db.Column(db.String(128), nullable=False)
@@ -107,6 +113,7 @@ class APIKey(db.Model):
         return f'<APIKey {self.key_name}>'
 
 class CodingDataset(db.Model):
+    __tablename__ = 'coding_dataset'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text)
