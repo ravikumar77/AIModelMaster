@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify, current_app
-from db import db
+from app import db
 from models import LLMModel, TrainingJob, Evaluation, GenerationLog, ModelStatus, TrainingStatus, CodingDataset
 from llm_service import LLMService
 from training_service import TrainingService

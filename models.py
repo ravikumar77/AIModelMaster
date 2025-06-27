@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import Enum
 import enum
-from db import db
+from app import db
 
 class ModelStatus(enum.Enum):
     AVAILABLE = "AVAILABLE"
