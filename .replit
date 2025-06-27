@@ -2,7 +2,7 @@ modules = ["python-3.11", "web", "nodejs-20", "bash"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["abseil-cpp", "cargo", "gitFull", "gtest", "libiconv", "oneDNN", "openssl", "pkg-config", "postgresql", "re2", "rustc"]
+packages = ["abseil-cpp", "cargo", "gitFull", "gtest", "libiconv", "libyaml", "oneDNN", "openssl", "pkg-config", "postgresql", "re2", "rustc"]
 
 [deployment]
 deploymentTarget = "autoscale"

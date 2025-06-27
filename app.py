@@ -31,7 +31,16 @@ with app.app_context():
     # Make sure to import the models here or their tables won't be created
     import models  # noqa: F401
     from routes import init_routes
+    from prompt_playground_routes import init_prompt_playground_routes
+    from prompt_playground_service import prompt_playground_service
     # Initialize routes
     init_routes(app)
+    init_prompt_playground_routes(app)
 
     db.create_all()
+    
+    # Initialize default templates
+    try:
+        prompt_playground_service.initialize_default_templates()
+    except Exception as e:
+        print(f"Warning: Could not initialize default templates: {e}")

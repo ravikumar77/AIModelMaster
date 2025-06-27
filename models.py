@@ -124,3 +124,103 @@ class CodingDataset(db.Model):
     
     def __repr__(self):
         return f'<CodingDataset {self.name}>'
+
+
+# Prompt Playground Models
+class PromptTemplate(db.Model):
+    __tablename__ = 'prompt_template'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text)
+    template_content = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(64), default='general')  # general, coding, creative, etc.
+    tags = db.Column(db.Text)  # JSON array of tags
+    is_public = db.Column(db.Boolean, default=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    usage_count = db.Column(db.Integer, default=0)
+    
+    # Relationships
+    prompt_sessions = db.relationship('PromptSession', backref='template', lazy=True)
+    
+    def __repr__(self):
+        return f'<PromptTemplate {self.name}>'
+
+
+class PromptSession(db.Model):
+    __tablename__ = 'prompt_session'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    prompt_text = db.Column(db.Text, nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey('llm_model.id'), nullable=False)
+    template_id = db.Column(db.Integer, db.ForeignKey('prompt_template.id'), nullable=True)
+    
+    # Generation parameters
+    temperature = db.Column(db.Float, default=0.7)
+    max_length = db.Column(db.Integer, default=100)
+    top_p = db.Column(db.Float, default=0.9)
+    top_k = db.Column(db.Integer, default=50)
+    repetition_penalty = db.Column(db.Float, default=1.0)
+    
+    # Session metadata
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_favorite = db.Column(db.Boolean, default=False)
+    tags = db.Column(db.Text)  # JSON array of tags
+    
+    # Chat context
+    context_messages = db.Column(db.Text)  # JSON array of previous messages
+    few_shot_examples = db.Column(db.Text)  # JSON array of examples
+    
+    # Relationships
+    generations = db.relationship('PromptGeneration', backref='session', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<PromptSession {self.name}>'
+
+
+class PromptGeneration(db.Model):
+    __tablename__ = 'prompt_generation'
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('prompt_session.id'), nullable=False)
+    
+    # Input/Output
+    input_text = db.Column(db.Text, nullable=False)
+    generated_text = db.Column(db.Text, nullable=False)
+    full_prompt = db.Column(db.Text, nullable=False)  # Complete prompt sent to model
+    
+    # Generation metadata
+    generation_time = db.Column(db.Float)  # Time in seconds
+    tokens_generated = db.Column(db.Integer)
+    tokens_per_second = db.Column(db.Float)
+    
+    # Used parameters (may differ from session defaults)
+    temperature = db.Column(db.Float)
+    max_length = db.Column(db.Integer)
+    top_p = db.Column(db.Float)
+    top_k = db.Column(db.Integer)
+    
+    # Quality metrics
+    user_rating = db.Column(db.Integer)  # 1-5 stars
+    is_flagged = db.Column(db.Boolean, default=False)
+    flag_reason = db.Column(db.String(256))
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<PromptGeneration {self.id}>'
+
+
+class PromptExport(db.Model):
+    __tablename__ = 'prompt_export'
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('prompt_session.id'), nullable=False)
+    export_format = db.Column(db.String(32), nullable=False)  # json, yaml, curl, python
+    export_content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    download_count = db.Column(db.Integer, default=0)
+    
+    def __repr__(self):
+        return f'<PromptExport {self.export_format}>'

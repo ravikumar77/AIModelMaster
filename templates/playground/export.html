@@ -1,0 +1,577 @@
+{% extends "base.html" %}
+
+{% block title %}📦 Export Configuration - {{ session.name }} - LLM Platform{% endblock %}
+
+{% block head %}
+<style>
+    .export-hero {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 3rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .format-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: white;
+        height: 100%;
+    }
+    
+    .format-card:hover {
+        border-color: #f093fb;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
+    }
+    
+    .format-card.selected {
+        border-color: #f093fb;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+    
+    .format-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        font-size: 24px;
+    }
+    
+    .format-card.selected .format-icon {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .export-preview {
+        background: #1e1e1e;
+        color: #f8f8f2;
+        border-radius: 8px;
+        padding: 1.5rem;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 0.85rem;
+        line-height: 1.4;
+        max-height: 500px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .export-controls {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .deployment-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .parameter-display {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    .copy-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 4px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .progress-indicator {
+        display: none;
+    }
+    
+    .deployment-badge {
+        background: linear-gradient(45deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+    
+    .tech-badge {
+        background: linear-gradient(45deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin: 0.25rem;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="export-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-5 fw-bold mb-3">📦 Export Configuration</h1>
+                <h3 class="mb-3">{{ session.name }}</h3>
+                <p class="lead mb-0">Generate deployment-ready configurations for multiple platforms including Triton Inference Server, TensorFlow Lite, and HuggingFace Hub</p>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="deployment-badge">Production Ready</div>
+                    <div class="deployment-badge">Multi-Platform</div>
+                    <div class="deployment-badge">Optimized</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Info -->
+<div class="container">
+    <div class="deployment-info">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="mb-3">Session Details</h5>
+                <div class="parameter-display">
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Model:</strong><br>
+                            <span class="text-white-50">{{ session.model.name if session.model else 'No Model' }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Temperature:</strong><br>
+                            <span class="text-white-50">{{ session.temperature }}</span>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <strong>Max Length:</strong><br>
+                            <span class="text-white-50">{{ session.max_length }}</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Top-p:</strong><br>
+                            <span class="text-white-50">{{ session.top_p }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5 class="mb-3">Supported Technologies</h5>
+                <div>
+                    <span class="tech-badge">PyTorch</span>
+                    <span class="tech-badge">ONNX</span>
+                    <span class="tech-badge">Triton</span>
+                    <span class="tech-badge">TensorFlow Lite</span>
+                    <span class="tech-badge">HuggingFace</span>
+                    <span class="tech-badge">Docker</span>
+                    <span class="tech-badge">CUDA</span>
+                    <span class="tech-badge">Mobile</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Format Selection -->
+    <div class="export-controls">
+        <h3 class="mb-4">Choose Export Format</h3>
+        <div class="row" id="format-selection">
+            <div class="col-md-3 mb-3">
+                <div class="format-card" data-format="json" onclick="selectFormat('json')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="file-text"></i>
+                        </div>
+                        <h5 class="card-title">JSON</h5>
+                        <p class="card-text small">Standard configuration format for API integrations</p>
+                        <div class="tech-badge">REST API</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="format-card" data-format="yaml" onclick="selectFormat('yaml')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="layers"></i>
+                        </div>
+                        <h5 class="card-title">YAML</h5>
+                        <p class="card-text small">Human-readable configuration for DevOps workflows</p>
+                        <div class="tech-badge">Kubernetes</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="format-card" data-format="curl" onclick="selectFormat('curl')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="terminal"></i>
+                        </div>
+                        <h5 class="card-title">cURL</h5>
+                        <p class="card-text small">Command-line API testing and scripting</p>
+                        <div class="tech-badge">CLI</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="format-card" data-format="python" onclick="selectFormat('python')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="code"></i>
+                        </div>
+                        <h5 class="card-title">Python</h5>
+                        <p class="card-text small">Python SDK integration code</p>
+                        <div class="tech-badge">SDK</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Advanced Export Formats -->
+        <h4 class="mb-3 mt-4">🚀 Advanced Deployment Formats</h4>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="format-card" data-format="triton" onclick="selectFormat('triton')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="server"></i>
+                        </div>
+                        <h5 class="card-title">Triton Inference Server</h5>
+                        <p class="card-text small">High-performance inference serving with NVIDIA Triton</p>
+                        <div class="tech-badge">NVIDIA</div>
+                        <div class="tech-badge">Production</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="format-card" data-format="tensorflow_lite" onclick="selectFormat('tensorflow_lite')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="smartphone"></i>
+                        </div>
+                        <h5 class="card-title">TensorFlow Lite</h5>
+                        <p class="card-text small">Mobile and edge device deployment optimization</p>
+                        <div class="tech-badge">Mobile</div>
+                        <div class="tech-badge">Edge</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="format-card" data-format="huggingface" onclick="selectFormat('huggingface')">
+                    <div class="card-body text-center">
+                        <div class="format-icon">
+                            <i data-feather="upload-cloud"></i>
+                        </div>
+                        <h5 class="card-title">HuggingFace Hub</h5>
+                        <p class="card-text small">Model sharing and collaboration platform</p>
+                        <div class="tech-badge">Community</div>
+                        <div class="tech-badge">Sharing</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Actions -->
+        <div class="d-flex gap-3 mt-4">
+            <button class="btn btn-primary btn-lg" onclick="generateExport()" id="exportBtn">
+                <i data-feather="download" class="me-2"></i>Generate Export
+            </button>
+            <button class="btn btn-outline-secondary btn-lg" onclick="copyToClipboard()" id="copyBtn" disabled>
+                <i data-feather="copy" class="me-2"></i>Copy to Clipboard
+            </button>
+            <button class="btn btn-outline-info btn-lg" onclick="downloadFile()" id="downloadBtn" disabled>
+                <i data-feather="download-cloud" class="me-2"></i>Download File
+            </button>
+        </div>
+        
+        <!-- Progress Indicator -->
+        <div class="progress-indicator mt-3" id="progressIndicator">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border text-primary me-3" role="status"></div>
+                <span>Generating export configuration...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Preview -->
+    <div class="card" id="exportPreviewCard" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Export Preview</h5>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleWrap()">
+                    <i data-feather="align-left" class="me-1"></i>Toggle Wrap
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="fullscreen()">
+                    <i data-feather="maximize" class="me-1"></i>Fullscreen
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="position-relative">
+                <pre class="export-preview mb-0" id="exportContent"></pre>
+                <button class="copy-btn" onclick="copyToClipboard()">
+                    <i data-feather="copy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deployment Instructions -->
+    <div class="card mt-4" id="deploymentInstructions" style="display: none;">
+        <div class="card-header">
+            <h5 class="mb-0">🚀 Deployment Instructions</h5>
+        </div>
+        <div class="card-body">
+            <div id="instructionContent"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFormat = null;
+let exportData = null;
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    selectFormat('json'); // Default selection
+});
+
+function selectFormat(format) {
+    // Update UI
+    document.querySelectorAll('.format-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`[data-format="${format}"]`).classList.add('selected');
+    
+    selectedFormat = format;
+    
+    // Reset buttons
+    document.getElementById('copyBtn').disabled = true;
+    document.getElementById('downloadBtn').disabled = true;
+    document.getElementById('exportPreviewCard').style.display = 'none';
+    document.getElementById('deploymentInstructions').style.display = 'none';
+    
+    feather.replace();
+}
+
+function generateExport() {
+    if (!selectedFormat) {
+        alert('Please select an export format');
+        return;
+    }
+    
+    // Show progress
+    document.getElementById('progressIndicator').style.display = 'block';
+    document.getElementById('exportBtn').disabled = true;
+    
+    // Generate export
+    fetch(`/api/playground/sessions/{{ session.id }}/export`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            format: selectedFormat
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Hide progress
+        document.getElementById('progressIndicator').style.display = 'none';
+        document.getElementById('exportBtn').disabled = false;
+        
+        if (data.success) {
+            exportData = data.export;
+            displayExport(data.export.content);
+            showDeploymentInstructions(selectedFormat);
+            
+            // Enable action buttons
+            document.getElementById('copyBtn').disabled = false;
+            document.getElementById('downloadBtn').disabled = false;
+        } else {
+            alert('Error generating export: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('progressIndicator').style.display = 'none';
+        document.getElementById('exportBtn').disabled = false;
+        alert('Error generating export');
+    });
+}
+
+function displayExport(content) {
+    document.getElementById('exportContent').textContent = content;
+    document.getElementById('exportPreviewCard').style.display = 'block';
+    feather.replace();
+    
+    // Scroll to preview
+    document.getElementById('exportPreviewCard').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+function showDeploymentInstructions(format) {
+    const instructions = getDeploymentInstructions(format);
+    document.getElementById('instructionContent').innerHTML = instructions;
+    document.getElementById('deploymentInstructions').style.display = 'block';
+    feather.replace();
+}
+
+function getDeploymentInstructions(format) {
+    const instructions = {
+        'triton': `
+            <h6>🚀 Triton Inference Server Deployment</h6>
+            <ol>
+                <li><strong>Prepare Model Repository:</strong> Create the directory structure as shown in the export</li>
+                <li><strong>Copy Model Files:</strong> Place your PyTorch model in the appropriate directory</li>
+                <li><strong>Start Triton Server:</strong> Run the Docker command from the export</li>
+                <li><strong>Test Inference:</strong> Use the provided cURL command to test</li>
+            </ol>
+            <div class="alert alert-info">
+                <i data-feather="info" class="me-2"></i>
+                Triton supports dynamic batching and optimized inference for production workloads
+            </div>
+        `,
+        'tensorflow_lite': `
+            <h6>📱 TensorFlow Lite Mobile Deployment</h6>
+            <ol>
+                <li><strong>Convert Model:</strong> Run the Python conversion script</li>
+                <li><strong>Optimize for Mobile:</strong> The script includes quantization settings</li>
+                <li><strong>Android Integration:</strong> Use the provided Kotlin code</li>
+                <li><strong>iOS Integration:</strong> Use the provided Swift code</li>
+            </ol>
+            <div class="alert alert-warning">
+                <i data-feather="alert-triangle" class="me-2"></i>
+                Remember to test on actual devices for performance validation
+            </div>
+        `,
+        'huggingface': `
+            <h6>🤗 HuggingFace Hub Deployment</h6>
+            <ol>
+                <li><strong>Setup Account:</strong> Login with <code>huggingface-cli login</code></li>
+                <li><strong>Prepare Repository:</strong> Run the upload script</li>
+                <li><strong>Model Card:</strong> The README.md will be automatically generated</li>
+                <li><strong>Test Download:</strong> Use the provided test script</li>
+            </ol>
+            <div class="alert alert-success">
+                <i data-feather="check-circle" class="me-2"></i>
+                Your model will be publicly available and easily shareable
+            </div>
+        `,
+        'json': `
+            <h6>📋 JSON Configuration Usage</h6>
+            <p>Use this JSON configuration for API integrations and automation scripts.</p>
+        `,
+        'yaml': `
+            <h6>📋 YAML Configuration Usage</h6>
+            <p>Use this YAML configuration for Kubernetes deployments and CI/CD pipelines.</p>
+        `,
+        'curl': `
+            <h6>💻 cURL Command Usage</h6>
+            <p>Copy and run the cURL command in your terminal to test the API endpoint.</p>
+        `,
+        'python': `
+            <h6>🐍 Python SDK Usage</h6>
+            <p>Integrate this Python code into your applications for programmatic access.</p>
+        `
+    };
+    
+    return instructions[format] || '<p>Basic export format - ready to use!</p>';
+}
+
+function copyToClipboard() {
+    if (!exportData) return;
+    
+    navigator.clipboard.writeText(exportData.content).then(() => {
+        // Show success feedback
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i data-feather="check" class="me-2"></i>Copied!';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+            feather.replace();
+        }, 2000);
+        
+        feather.replace();
+    });
+}
+
+function downloadFile() {
+    if (!exportData) return;
+    
+    const filename = `${selectedFormat}_export_{{ session.name | replace(' ', '_') }}.${getFileExtension(selectedFormat)}`;
+    const blob = new Blob([exportData.content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function getFileExtension(format) {
+    const extensions = {
+        'json': 'json',
+        'yaml': 'yml',
+        'curl': 'sh',
+        'python': 'py',
+        'triton': 'txt',
+        'tensorflow_lite': 'py',
+        'huggingface': 'sh'
+    };
+    return extensions[format] || 'txt';
+}
+
+function toggleWrap() {
+    const preview = document.getElementById('exportContent');
+    preview.style.whiteSpace = preview.style.whiteSpace === 'pre-wrap' ? 'pre' : 'pre-wrap';
+}
+
+function fullscreen() {
+    const preview = document.getElementById('exportPreviewCard');
+    if (preview.requestFullscreen) {
+        preview.requestFullscreen();
+    }
+}
+</script>
+{% endblock %}

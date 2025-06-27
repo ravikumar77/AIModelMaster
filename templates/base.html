@@ -53,6 +53,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['playground_index', 'playground_session', 'playground_templates', 'playground_export'] %}active{% endif %}" href="{{ url_for('playground_index') }}">
+                            <i data-feather="edit-3" class="me-1"></i>Playground
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'evaluation' %}active{% endif %}" href="{{ url_for('evaluation') }}">
                             <i data-feather="bar-chart" class="me-1"></i>Evaluation
                         </a>

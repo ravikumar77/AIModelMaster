@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}🧠 Prompt Playground - LLM Platform{% endblock %}
+
+{% block head %}
+<style>
+    .playground-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .session-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .session-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #667eea;
+    }
+    
+    .template-badge {
+        background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .favorite-star {
+        color: #fbbf24;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    
+    .favorite-star:hover {
+        transform: scale(1.2);
+    }
+    
+    .quick-action-btn {
+        background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .template-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .template-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .template-card:hover {
+        border-color: #667eea;
+        background-color: #f8fafc;
+    }
+    
+    .creation-form {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="playground-hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold mb-3">🧠 Prompt Playground</h1>
+                <p class="lead mb-4">Craft, test, and perfect your prompts with advanced parameter tuning, templates, and comprehensive export options.</p>
+                <div class="d-flex gap-3">
+                    <button class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#newSessionModal">
+                        <i data-feather="plus-circle" class="me-2"></i>New Session
+                    </button>
+                    <a href="{{ url_for('playground_templates') }}" class="quick-action-btn">
+                        <i data-feather="folder" class="me-2"></i>Templates
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="stats-card">
+                    <h3 class="mb-1">{{ sessions|length }}</h3>
+                    <p class="mb-0">Active Sessions</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container">
+    <div class="row">
+        <!-- Sessions List -->
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3>Recent Sessions</h3>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="filter" id="all" checked>
+                    <label class="btn btn-outline-primary" for="all">All</label>
+                    
+                    <input type="radio" class="btn-check" name="filter" id="favorites">
+                    <label class="btn btn-outline-primary" for="favorites">Favorites</label>
+                </div>
+            </div>
+
+            {% if sessions %}
+                <div class="row" id="sessions-container">
+                    {% for session in sessions %}
+                    <div class="col-md-6 mb-3 session-item" data-favorite="{{ session.is_favorite|lower }}">
+                        <div class="card session-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">{{ session.name }}</h5>
+                                    <i data-feather="star" class="favorite-star {{ 'text-warning' if session.is_favorite else 'text-muted' }}" 
+                                       onclick="toggleFavorite({{ session.id }})"></i>
+                                </div>
+                                
+                                <p class="card-text text-muted small mb-2">
+                                    {{ session.prompt_text[:100] }}{% if session.prompt_text|length > 100 %}...{% endif %}
+                                </p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="template-badge">{{ session.model.name if session.model else 'No Model' }}</span>
+                                    <small class="text-muted">{{ session.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('playground_session', session_id=session.id) }}" 
+                                       class="btn btn-sm btn-primary flex-fill">
+                                        <i data-feather="play" class="me-1"></i>Open
+                                    </a>
+                                    <a href="{{ url_for('playground_export', session_id=session.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i data-feather="download" class="me-1"></i>Export
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i data-feather="inbox" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                    <h5 class="text-muted">No sessions yet</h5>
+                    <p class="text-muted">Create your first prompt session to get started</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSessionModal">
+                        <i data-feather="plus" class="me-2"></i>Create Session
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Templates Sidebar -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Start Templates</h5>
+                </div>
+                <div class="card-body">
+                    {% for template in templates[:5] %}
+                    <div class="template-card mb-2" onclick="useTemplate({{ template.id }})">
+                        <h6 class="mb-1">{{ template.name }}</h6>
+                        <p class="text-muted small mb-1">{{ template.description[:60] }}...</p>
+                        <span class="badge bg-secondary">{{ template.category }}</span>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('playground_templates') }}" class="btn btn-outline-primary btn-sm">
+                            View All Templates
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Session Modal -->
+<div class="modal fade" id="newSessionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('create_session_form') }}" method="post">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Session Name</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="model_id" class="form-label">Model</label>
+                                <select class="form-select" id="model_id" name="model_id" required>
+                                    {% for model in models %}
+                                    <option value="{{ model.id }}">{{ model.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="template_id" class="form-label">Template (Optional)</label>
+                        <select class="form-select" id="template_id" name="template_id">
+                            <option value="">No template</option>
+                            {% for template in templates %}
+                            <option value="{{ template.id }}" data-content="{{ template.template_content }}">
+                                {{ template.name }} - {{ template.category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="prompt_text" class="form-label">Prompt</label>
+                        <textarea class="form-control" id="prompt_text" name="prompt_text" rows="6" 
+                                  placeholder="Enter your prompt here..." required></textarea>
+                    </div>
+                    
+                    <!-- Advanced Parameters -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Generation Parameters</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="temperature" class="form-label">Temperature</label>
+                                        <input type="range" class="form-range" id="temperature" name="temperature" 
+                                               min="0.1" max="2.0" step="0.1" value="0.7">
+                                        <div class="d-flex justify-content-between">
+                                            <small>0.1</small>
+                                            <small id="temperature-value">0.7</small>
+                                            <small>2.0</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="max_length" class="form-label">Max Length</label>
+                                        <input type="number" class="form-control" id="max_length" name="max_length" 
+                                               min="10" max="1000" value="100">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="top_p" class="form-label">Top-p</label>
+                                        <input type="range" class="form-range" id="top_p" name="top_p" 
+                                               min="0.1" max="1.0" step="0.1" value="0.9">
+                                        <div class="d-flex justify-content-between">
+                                            <small>0.1</small>
+                                            <small id="top_p-value">0.9</small>
+                                            <small>1.0</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="top_k" class="form-label">Top-k</label>
+                                        <input type="number" class="form-control" id="top_k" name="top_k" 
+                                               min="1" max="100" value="50">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Session</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Interactive functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    feather.replace();
+    
+    // Template selection handler
+    document.getElementById('template_id').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const content = selectedOption.dataset.content;
+        if (content) {
+            document.getElementById('prompt_text').value = content;
+        }
+    });
+    
+    // Parameter range sliders
+    ['temperature', 'top_p'].forEach(param => {
+        const slider = document.getElementById(param);
+        const valueDisplay = document.getElementById(param + '-value');
+        
+        slider.addEventListener('input', function() {
+            valueDisplay.textContent = this.value;
+        });
+    });
+    
+    // Session filtering
+    document.querySelectorAll('input[name="filter"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const showFavorites = this.id === 'favorites';
+            const sessions = document.querySelectorAll('.session-item');
+            
+            sessions.forEach(session => {
+                const isFavorite = session.dataset.favorite === 'true';
+                session.style.display = showFavorites ? (isFavorite ? 'block' : 'none') : 'block';
+            });
+        });
+    });
+});
+
+function toggleFavorite(sessionId) {
+    fetch(`/api/playground/sessions/${sessionId}/favorite`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Simple reload for now
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function useTemplate(templateId) {
+    document.getElementById('template_id').value = templateId;
+    document.getElementById('template_id').dispatchEvent(new Event('change'));
+    const modal = new bootstrap.Modal(document.getElementById('newSessionModal'));
+    modal.show();
+}
+</script>
+{% endblock %}
