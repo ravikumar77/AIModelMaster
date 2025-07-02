@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Model Export Options{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5 fw-bold">
+            <i data-feather="download" class="me-3"></i>
+            Model Export Options
+        </h1>
+        <p class="lead text-muted">Export your trained models to various deployment formats</p>
+    </div>
+</div>
+
+<!-- Export Options Overview -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i data-feather="server" class="mb-3" style="width: 48px; height: 48px; color: #0d6efd;"></i>
+                <h5 class="card-title">Triton Inference Server</h5>
+                <p class="card-text">Export models for high-performance serving with NVIDIA Triton</p>
+                <div class="text-muted small">
+                    <i data-feather="check" class="me-1"></i> ONNX Format<br>
+                    <i data-feather="check" class="me-1"></i> Dynamic Batching<br>
+                    <i data-feather="check" class="me-1"></i> GPU Acceleration
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i data-feather="smartphone" class="mb-3" style="width: 48px; height: 48px; color: #198754;"></i>
+                <h5 class="card-title">TensorFlow Lite</h5>
+                <p class="card-text">Optimize models for mobile and edge device deployment</p>
+                <div class="text-muted small">
+                    <i data-feather="check" class="me-1"></i> Model Quantization<br>
+                    <i data-feather="check" class="me-1"></i> Size Optimization<br>
+                    <i data-feather="check" class="me-1"></i> Mobile Ready
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i data-feather="upload-cloud" class="mb-3" style="width: 48px; height: 48px; color: #fd7e14;"></i>
+                <h5 class="card-title">HuggingFace Hub</h5>
+                <p class="card-text">Share models with the community on HuggingFace Hub</p>
+                <div class="text-muted small">
+                    <i data-feather="check" class="me-1"></i> Auto README<br>
+                    <i data-feather="check" class="me-1"></i> Version Control<br>
+                    <i data-feather="check" class="me-1"></i> Public/Private
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Models -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i data-feather="cpu" class="me-2"></i>
+                    Available Models for Export
+                </h5>
+                <button class="btn btn-primary" onclick="refreshModels()">
+                    <i data-feather="refresh-cw" class="me-1"></i>
+                    Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                {% if models %}
+                    <div class="row">
+                        {% for model in models %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ model.name }}</h6>
+                                    <p class="card-text text-muted small">
+                                        Base: {{ model.base_model }}<br>
+                                        {{ model.description or "No description" }}
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="badge bg-success">{{ model.status }}</span>
+                                        <small class="text-muted">ID: {{ model.id }}</small>
+                                    </div>
+                                    <a href="{{ url_for('export.model_export_options', model_id=model.id) }}" 
+                                       class="btn btn-primary btn-sm w-100">
+                                        <i data-feather="download" class="me-1"></i>
+                                        Export Options
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i data-feather="inbox" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                        <p class="text-muted">No models available for export</p>
+                        <a href="{{ url_for('models') }}" class="btn btn-outline-primary">
+                            <i data-feather="plus" class="me-1"></i>
+                            Create Models
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Export Jobs -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="clock" class="me-2"></i>
+                    Recent Export Jobs
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_jobs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Model</th>
+                                    <th>Export Type</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for job in recent_jobs %}
+                                <tr>
+                                    <td>{{ job.id }}</td>
+                                    <td>{{ job.model.name if job.model else 'Unknown' }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ job.export_type }}</span>
+                                    </td>
+                                    <td>
+                                        {% set status_class = 'secondary' %}
+                                        {% if job.status.value == 'COMPLETED' %}
+                                            {% set status_class = 'success' %}
+                                        {% elif job.status.value == 'RUNNING' %}
+                                            {% set status_class = 'primary' %}
+                                        {% elif job.status.value == 'FAILED' %}
+                                            {% set status_class = 'danger' %}
+                                        {% endif %}
+                                        <span class="badge bg-{{ status_class }}">{{ job.status.value }}</span>
+                                    </td>
+                                    <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '-' }}</td>
+                                    <td>
+                                        {% if job.status.value == 'COMPLETED' and job.output_path %}
+                                            {% if job.export_type == 'huggingface' %}
+                                                <a href="{{ job.output_path }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    <i data-feather="external-link" class="me-1"></i>
+                                                    View
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ url_for('export.download_export', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
+                                                    <i data-feather="download" class="me-1"></i>
+                                                    Download
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                <i data-feather="clock" class="me-1"></i>
+                                                {{ job.status.value.title() }}
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i data-feather="archive" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
+                        <p class="text-muted">No export jobs yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+
+function refreshModels() {
+    location.reload();
+}
+</script>
+{% endblock %}

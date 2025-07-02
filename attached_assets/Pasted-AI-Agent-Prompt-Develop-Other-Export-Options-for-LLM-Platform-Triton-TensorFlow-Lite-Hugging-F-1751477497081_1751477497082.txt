@@ -1,0 +1,165 @@
+AI Agent Prompt: Develop "Other Export Options" for LLM Platform (Triton, TensorFlow Lite, Hugging Face Hub)
+📍 Context:
+We are enhancing our existing LLM Platform by adding multiple advanced model export options. These options should allow users to export their trained/fine-tuned models into various deployment formats suitable for different targets like Triton Inference Server, Mobile/Edge Devices (TensorFlow Lite), and Hugging Face Model Hub.
+
+✅ Your AI Agent Task:
+For each export option below, generate:
+
+High-Level Feature Summary
+
+Backend API Design (Endpoints, Request/Response JSON Schemas)
+
+Export Pipeline Flow
+
+Angular Frontend UI/UX Design (Form Fields, Buttons, Status Display)
+
+Any Python Scripts Required (Model Conversion, Upload Scripts)
+
+Recommended Tools/Packages for Each Export Type
+
+Optional UI Wireframe Description
+
+✅ Export Types & Requirements:
+1. ⚡ Triton Model Export (For Triton Inference Server Deployment)
+Description:
+Allow users to export LLM models in a Triton Inference Server compatible format (ONNX or TorchScript) with proper Triton config.pbtxt generation.
+
+Backend Tasks:
+
+Convert PyTorch/Hugging Face model → ONNX or TorchScript
+
+Generate Triton model repository folder structure
+
+Auto-generate config.pbtxt
+
+Package model and configs in /exports/triton/{model_id}/
+
+Frontend (Angular):
+
+Export Option: “Export to Triton Inference Server”
+
+Optional settings:
+
+Batch size
+
+Max sequence length
+
+Dynamic/Static Shape toggle
+
+Progress bar + Download Link after export
+
+Tools Needed:
+
+Hugging Face Optimum
+
+PyTorch ONNX Export
+
+Triton Model Analyzer (optional for profiling)
+
+2. 📱 TensorFlow Lite Export (For Mobile & Edge Deployment)
+Description:
+Allow users to export smaller models (like distilled LLMs) for TensorFlow Lite (TFLite) for deployment on mobile, Raspberry Pi, and edge devices.
+
+Backend Tasks:
+
+Convert PyTorch → ONNX → TensorFlow SavedModel → TFLite (multi-step pipeline)
+
+Apply quantization options (Dynamic range, Float16, etc.)
+
+Validate model size and inference compatibility
+
+Package .tflite file in /exports/tflite/{model_id}/
+
+Frontend (Angular):
+
+Export Option: “Export to TensorFlow Lite”
+
+User-selectable options:
+
+Quantization type (None, Dynamic, Float16)
+
+Target device (Android, Edge TPU, etc.)
+
+Progress & conversion logs
+
+Tools Needed:
+
+ONNX
+
+ONNX-TensorFlow Converter
+
+TensorFlow Lite Converter
+
+Optional: Flatbuffer viewer for TFLite
+
+3. 🌐 Hugging Face Hub Export (For Community Model Sharing)
+Description:
+Let users push their trained model directly to the Hugging Face Model Hub, either private or public.
+
+Backend Tasks:
+
+Authenticate with Hugging Face using user token
+
+Upload model weights, tokenizer, config files
+
+Auto-generate Hugging Face README.md
+
+Allow selection between private and public repo visibility
+
+Log and display Hugging Face URL for uploaded model
+
+Frontend (Angular):
+
+Export Option: “Push to Hugging Face Hub”
+
+Fields:
+
+Hugging Face Access Token
+
+Model Repo Name
+
+Visibility: Private/Public
+
+Auto-generate README toggle
+
+Display status:
+
+Upload progress
+
+Final Hugging Face URL on completion
+
+Error logs if upload fails
+
+Tools Needed:
+
+Hugging Face huggingface_hub Python package
+
+Git / DVC (if needed for large file upload)
+
+✅ API Endpoints (Example for All Exports):
+Endpoint	Method	Description
+/export/{model_id}/triton	POST	Trigger Triton export
+/export/{model_id}/tflite	POST	Trigger TensorFlow Lite export
+/export/{model_id}/huggingface	POST	Trigger Hugging Face Hub upload
+/export/jobs/{job_id}	GET	Get export job status
+
+✅ Export Job Status Tracking:
+For long-running export jobs:
+
+Save export job status: Queued → Running → Completed → Failed
+
+Allow users to refresh job progress via frontend
+
+Save job logs for download
+
+✅ Folder Structure for Exports:
+bash
+Copy
+Edit
+/exports/
+├── triton/
+│   └── {model_id}/
+├── tflite/
+│   └── {model_id}/
+├── huggingface/
+│   └── {model_id}/

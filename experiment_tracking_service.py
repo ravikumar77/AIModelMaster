@@ -8,7 +8,11 @@ import random
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
-from app import db
+# Use Flask's app context for database operations
+def get_db():
+    """Get database session"""
+    from app import db
+    return db
 from models import (
     Experiment, ExperimentMetric, ExperimentComparison, ExperimentArtifact, 
     ExperimentNote, ExperimentStatus, TrainingJob, LLMModel, CodingDataset
@@ -46,8 +50,8 @@ class ExperimentTrackingService:
                 status=ExperimentStatus.PENDING
             )
             
-            db.session.add(experiment)
-            db.session.commit()
+            get_db().session.add(experiment)
+            get_db().session.commit()
             
             logger.info(f"Created experiment: {name}")
             return experiment

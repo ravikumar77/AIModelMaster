@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Download Export - Job {{ job.id }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('export.index') }}">Export</a></li>
+                <li class="breadcrumb-item active">Download</li>
+            </ol>
+        </nav>
+        
+        <h1 class="display-5 fw-bold">
+            <i data-feather="download" class="me-3"></i>
+            Download Export
+        </h1>
+        <p class="lead text-muted">Export Job {{ job.id }} - {{ job.export_type.title() }}</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="package" class="me-2"></i>
+                    Export Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Export Type:</strong></div>
+                    <div class="col-md-9">
+                        <span class="badge bg-info">{{ job.export_type }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Model:</strong></div>
+                    <div class="col-md-9">{{ job.model.name if job.model else 'Unknown' }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Status:</strong></div>
+                    <div class="col-md-9">
+                        <span class="badge bg-success">{{ job.status.value }}</span>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Created:</strong></div>
+                    <div class="col-md-9">{{ job.created_at.strftime('%Y-%m-%d %H:%M:%S') if job.created_at else 'Unknown' }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Completed:</strong></div>
+                    <div class="col-md-9">{{ job.completed_at.strftime('%Y-%m-%d %H:%M:%S') if job.completed_at else 'Unknown' }}</div>
+                </div>
+                
+                {% if job.config %}
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Configuration:</strong></div>
+                    <div class="col-md-9">
+                        <pre class="bg-dark text-light p-2 rounded small">{{ job.config }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if job.logs %}
+                <div class="row mb-3">
+                    <div class="col-md-3"><strong>Export Logs:</strong></div>
+                    <div class="col-md-9">
+                        <pre class="bg-dark text-light p-2 rounded small">{{ job.logs }}</pre>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="download" class="me-2"></i>
+                    Download Options
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if job.export_type == 'triton' %}
+                    <p class="text-muted mb-3">Your Triton model package contains:</p>
+                    <ul class="list-unstyled mb-3">
+                        <li><i data-feather="file" class="me-2"></i> model.onnx</li>
+                        <li><i data-feather="file-text" class="me-2"></i> config.pbtxt</li>
+                        <li><i data-feather="folder" class="me-2"></i> Model repository structure</li>
+                    </ul>
+                    
+                {% elif job.export_type == 'tflite' %}
+                    <p class="text-muted mb-3">Your TensorFlow Lite package contains:</p>
+                    <ul class="list-unstyled mb-3">
+                        <li><i data-feather="file" class="me-2"></i> model.tflite</li>
+                        <li><i data-feather="file-text" class="me-2"></i> metadata.json</li>
+                        <li><i data-feather="info" class="me-2"></i> Deployment guide</li>
+                    </ul>
+                    
+                {% elif job.export_type == 'huggingface' %}
+                    <p class="text-muted mb-3">Your model is now available on HuggingFace Hub:</p>
+                    <div class="d-grid">
+                        <a href="{{ job.output_path }}" target="_blank" class="btn btn-primary">
+                            <i data-feather="external-link" class="me-1"></i>
+                            View on HuggingFace
+                        </a>
+                    </div>
+                    <p class="text-muted small mt-2">
+                        You can now use this model directly from the HuggingFace library.
+                    </p>
+                {% endif %}
+                
+                {% if job.export_type != 'huggingface' %}
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" onclick="downloadExport()">
+                        <i data-feather="download" class="me-1"></i>
+                        Download Package
+                    </button>
+                    <small class="text-muted">
+                        Package will be downloaded as a ZIP file
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if job.export_type == 'triton' %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="info" class="me-2"></i>
+                    Deployment Instructions
+                </h6>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li>Extract the downloaded package</li>
+                    <li>Copy the model repository to your Triton server</li>
+                    <li>Start Triton with the model repository path</li>
+                    <li>Send inference requests to the model endpoint</li>
+                </ol>
+                <a href="#" class="btn btn-sm btn-outline-info">
+                    <i data-feather="book" class="me-1"></i>
+                    Full Documentation
+                </a>
+            </div>
+        </div>
+        {% elif job.export_type == 'tflite' %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i data-feather="info" class="me-2"></i>
+                    Mobile Integration
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small">To use this model in your mobile app:</p>
+                <ol class="small">
+                    <li>Add the .tflite file to your app resources</li>
+                    <li>Use TensorFlow Lite interpreter</li>
+                    <li>Load model and run inference</li>
+                </ol>
+                <a href="#" class="btn btn-sm btn-outline-info">
+                    <i data-feather="smartphone" class="me-1"></i>
+                    Android Guide
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+
+function downloadExport() {
+    // For demo purposes, show a message
+    // In production, this would trigger the actual file download
+    alert('Download would start here. In the demo mode, export files are simulated.');
+    
+    // Redirect back to export list
+    setTimeout(() => {
+        window.location.href = '{{ url_for("export.index") }}';
+    }, 2000);
+}
+</script>
+{% endblock %}

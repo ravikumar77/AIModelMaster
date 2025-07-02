@@ -5,13 +5,23 @@ import json
 import logging
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
-from experiment_tracking_service import experiment_tracking_service
 from models import Experiment, ExperimentMetric, ExperimentComparison, LLMModel, CodingDataset
 
 logger = logging.getLogger(__name__)
 
 # Create blueprint
 experiment_bp = Blueprint('experiments', __name__, url_prefix='/experiments')
+
+# Global service instance (will be initialized later to avoid circular imports)
+experiment_tracking_service = None
+
+def get_experiment_service():
+    """Get experiment tracking service instance (lazy initialization)"""
+    global experiment_tracking_service
+    if experiment_tracking_service is None:
+        from experiment_tracking_service import ExperimentTrackingService
+        experiment_tracking_service = ExperimentTrackingService()
+    return experiment_tracking_service
 
 @experiment_bp.route('/')
 def index():
@@ -25,7 +35,7 @@ def index():
         
         # Get experiments with filtering
         tags = [tag_filter] if tag_filter else None
-        experiments = experiment_tracking_service.get_experiments(
+        experiments = get_experiment_service().get_experiments(
             user_id=user_id,
             status=status_filter,
             experiment_group=group_filter,
@@ -34,7 +44,7 @@ def index():
         )
         
         # Get statistics
-        stats = experiment_tracking_service.get_experiment_statistics()
+        stats = get_experiment_service().get_experiment_statistics()
         
         # Get available models and datasets for creating new experiments
         models = LLMModel.query.all()
@@ -117,7 +127,7 @@ def create():
         user_id = session.get('user_id')
         
         # Create experiment
-        experiment = experiment_tracking_service.create_experiment(
+        experiment = get_experiment_service().create_experiment(
             name=name,
             description=description,
             model_id=model_id,
@@ -156,7 +166,7 @@ def detail(experiment_id):
         experiment = Experiment.query.get_or_404(experiment_id)
         
         # Get experiment metrics
-        metrics = experiment_tracking_service.get_experiment_metrics(experiment_id)
+        metrics = get_experiment_service().get_experiment_metrics(experiment_id)
         
         # Group metrics by type and name
         metric_groups = {}
@@ -176,14 +186,14 @@ def detail(experiment_id):
         metric_timeseries = {}
         
         for metric_name in key_metrics:
-            timeseries = experiment_tracking_service.get_metric_timeseries(
+            timeseries = get_experiment_service().get_metric_timeseries(
                 experiment_id, metric_name, 'training'
             )
             if timeseries['values']:
                 metric_timeseries[metric_name] = timeseries
                 
             # Also get validation metrics
-            val_timeseries = experiment_tracking_service.get_metric_timeseries(
+            val_timeseries = get_experiment_service().get_metric_timeseries(
                 experiment_id, metric_name, 'validation'
             )
             if val_timeseries['values']:
@@ -223,7 +233,7 @@ def detail(experiment_id):
 def start_experiment(experiment_id):
     """Start an experiment"""
     try:
-        success = experiment_tracking_service.start_experiment(experiment_id)
+        success = get_experiment_service().start_experiment(experiment_id)
         
         if success:
             if request.is_json:
@@ -252,7 +262,7 @@ def start_experiment(experiment_id):
 def stop_experiment(experiment_id):
     """Stop an experiment"""
     try:
-        success = experiment_tracking_service.complete_experiment(experiment_id)
+        success = get_experiment_service().complete_experiment(experiment_id)
         
         if success:
             if request.is_json:
@@ -281,7 +291,7 @@ def stop_experiment(experiment_id):
 def toggle_favorite(experiment_id):
     """Toggle experiment favorite status"""
     try:
-        is_favorite = experiment_tracking_service.toggle_favorite(experiment_id)
+        is_favorite = get_experiment_service().toggle_favorite(experiment_id)
         
         if request.is_json:
             return jsonify({
@@ -307,7 +317,7 @@ def toggle_favorite(experiment_id):
 def archive_experiment(experiment_id):
     """Archive an experiment"""
     try:
-        success = experiment_tracking_service.archive_experiment(experiment_id)
+        success = get_experiment_service().archive_experiment(experiment_id)
         
         if success:
             if request.is_json:
@@ -357,7 +367,7 @@ def compare():
         metrics_to_compare = ['loss', 'val_loss', 'perplexity', 'bleu_score', 'rouge_1']
         
         # Generate comparison analysis
-        comparison = experiment_tracking_service.create_comparison(
+        comparison = get_experiment_service().create_comparison(
             experiment_ids=experiment_ids,
             comparison_name=f"Comparison of {len(experiment_ids)} experiments",
             metrics_to_compare=metrics_to_compare,
@@ -366,7 +376,7 @@ def compare():
         )
         
         # Get chart data for visualization
-        chart_data = experiment_tracking_service.get_comparison_chart_data(comparison.id)
+        chart_data = get_experiment_service().get_comparison_chart_data(comparison.id)
         
         return render_template('experiments/compare.html',
                              experiments=experiments,
@@ -386,7 +396,7 @@ def api_get_metrics(experiment_id):
         metric_name = request.args.get('metric', 'loss')
         metric_type = request.args.get('type', 'training')
         
-        timeseries = experiment_tracking_service.get_metric_timeseries(
+        timeseries = get_experiment_service().get_metric_timeseries(
             experiment_id, metric_name, metric_type
         )
         
@@ -406,7 +416,7 @@ def api_get_metrics(experiment_id):
 def api_get_comparison_data(comparison_id):
     """API endpoint to get comparison chart data"""
     try:
-        chart_data = experiment_tracking_service.get_comparison_chart_data(comparison_id)
+        chart_data = get_experiment_service().get_comparison_chart_data(comparison_id)
         
         return jsonify({
             'success': True,
@@ -431,7 +441,7 @@ def add_note(experiment_id):
         note_type = data.get('note_type', 'general')
         user_id = session.get('user_id')
         
-        note = experiment_tracking_service.add_note(
+        note = get_experiment_service().add_note(
             experiment_id=experiment_id,
             title=title,
             content=content,

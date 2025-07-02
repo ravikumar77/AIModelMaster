@@ -126,6 +126,37 @@ class CodingDataset(db.Model):
         return f'<CodingDataset {self.name}>'
 
 
+# Export System Models
+class ExportStatus(enum.Enum):
+    QUEUED = "QUEUED"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class ExportJob(db.Model):
+    __tablename__ = 'export_job'
+    id = db.Column(db.Integer, primary_key=True)
+    model_id = db.Column(db.Integer, db.ForeignKey('llm_model.id'), nullable=False)
+    export_type = db.Column(db.String(50), nullable=False)  # triton, tflite, huggingface
+    config = db.Column(db.Text)  # JSON configuration
+    status = db.Column(db.Enum(ExportStatus), default=ExportStatus.QUEUED)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    output_path = db.Column(db.String(500))
+    logs = db.Column(db.Text)
+    error_message = db.Column(db.String(500))
+    
+    # Relationships
+    model = db.relationship('LLMModel', backref='export_jobs')
+    user = db.relationship('User', backref='export_jobs')
+    
+    def __repr__(self):
+        return f'<ExportJob {self.id}: {self.export_type}>'
+
+
 # Prompt Playground Models
 class PromptTemplate(db.Model):
     __tablename__ = 'prompt_template'

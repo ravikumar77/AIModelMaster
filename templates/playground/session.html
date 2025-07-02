@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Prompt Playground Session - {{ session.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Session Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold mb-0">
+                        <i data-feather="play-circle" class="me-2"></i>
+                        {{ session.name }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ session.description or "No description" }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('playground_index') }}" class="btn btn-outline-secondary me-2">
+                        <i data-feather="arrow-left" class="me-1"></i>
+                        Back to Playground
+                    </a>
+                    <button class="btn btn-primary" onclick="generateText()">
+                        <i data-feather="play" class="me-1"></i>
+                        Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Panel: Configuration -->
+        <div class="col-lg-4">
+            <!-- Session Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="settings" class="me-2"></i>
+                        Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="sessionForm">
+                        <!-- Model Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Model</label>
+                            <select class="form-select" name="model_id" id="model_id">
+                                {% for model in models %}
+                                <option value="{{ model.id }}" {% if model.id == session.model_id %}selected{% endif %}>
+                                    {{ model.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- System Prompt -->
+                        <div class="mb-3">
+                            <label class="form-label">System Prompt</label>
+                            <textarea class="form-control" name="system_prompt" rows="3" placeholder="Set the AI's behavior and context...">{{ session.system_prompt or '' }}</textarea>
+                        </div>
+
+                        <!-- Context -->
+                        <div class="mb-3">
+                            <label class="form-label">Context</label>
+                            <textarea class="form-control" name="context" rows="2" placeholder="Additional context...">{{ session.context or '' }}</textarea>
+                        </div>
+
+                        <!-- Generation Parameters -->
+                        <h6 class="mb-3">Generation Parameters</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Temperature: <span id="tempValue">{{ session.temperature or 0.7 }}</span></label>
+                            <input type="range" class="form-range" name="temperature" min="0" max="2" step="0.1" 
+                                   value="{{ session.temperature or 0.7 }}" oninput="updateSlider('tempValue', this.value)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Max Length</label>
+                            <input type="number" class="form-control" name="max_length" 
+                                   value="{{ session.max_length or 100 }}" min="1" max="1000">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Top P: <span id="topPValue">{{ session.top_p or 0.9 }}</span></label>
+                            <input type="range" class="form-range" name="top_p" min="0" max="1" step="0.05" 
+                                   value="{{ session.top_p or 0.9 }}" oninput="updateSlider('topPValue', this.value)">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Top K</label>
+                            <input type="number" class="form-control" name="top_k" 
+                                   value="{{ session.top_k or 50 }}" min="1" max="100">
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="updateSession()">
+                            <i data-feather="save" class="me-1"></i>
+                            Update Session
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Templates -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="bookmark" class="me-2"></i>
+                        Templates
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for template in templates %}
+                        <a href="#" class="list-group-item list-group-item-action" 
+                           onclick="loadTemplate('{{ template.id }}')">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ template.name }}</h6>
+                                <small class="text-muted">{{ template.category }}</small>
+                            </div>
+                            <p class="mb-1">{{ template.description }}</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Generation Interface -->
+        <div class="col-lg-8">
+            <!-- Input -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="edit-3" class="me-2"></i>
+                        Input
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="inputText" rows="4" 
+                              placeholder="Enter your prompt here..."></textarea>
+                    <div class="mt-3 d-flex justify-content-between">
+                        <button class="btn btn-primary" onclick="generateText()">
+                            <i data-feather="play" class="me-1"></i>
+                            Generate Text
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="clearInput()">
+                            <i data-feather="x" class="me-1"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generation Results -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="message-square" class="me-2"></i>
+                        Generated Text
+                    </h5>
+                    <div id="generationStatus" class="text-muted">Ready</div>
+                </div>
+                <div class="card-body">
+                    <div id="generationResults">
+                        <div class="text-center py-5 text-muted">
+                            <i data-feather="message-circle" style="width: 48px; height: 48px;" class="mb-3"></i>
+                            <p>Generated text will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Generations -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>
+                        Recent Generations
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="recentGenerations">
+                        {% if generations %}
+                            {% for gen in generations[:5] %}
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1"><strong>Input:</strong> {{ gen.input_text[:100] }}{% if gen.input_text|length > 100 %}...{% endif %}</p>
+                                        <p class="mb-1 text-muted">{{ gen.generated_text[:150] }}{% if gen.generated_text|length > 150 %}...{% endif %}</p>
+                                        <small class="text-muted">
+                                            {{ gen.created_at.strftime('%m/%d %H:%M') }} • 
+                                            {{ "%.2f"|format(gen.generation_time) }}s • 
+                                            {{ gen.tokens_generated }} tokens
+                                        </small>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="btn-group-vertical" role="group">
+                                            <button class="btn btn-outline-success btn-sm" onclick="rateGeneration({{ gen.id }}, 5)">
+                                                <i data-feather="thumbs-up"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="flagGeneration({{ gen.id }})">
+                                                <i data-feather="flag"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3 text-muted">
+                                <i data-feather="clock" class="mb-2"></i>
+                                <p>No generations yet</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateSlider(labelId, value) {
+    document.getElementById(labelId).textContent = value;
+}
+
+function generateText() {
+    const inputText = document.getElementById('inputText').value;
+    if (!inputText.trim()) {
+        alert('Please enter some text to generate from');
+        return;
+    }
+
+    // Update status
+    document.getElementById('generationStatus').innerHTML = 
+        '<div class="spinner-border spinner-border-sm me-2"></div>Generating...';
+
+    // Collect form data
+    const formData = new FormData(document.getElementById('sessionForm'));
+    const data = {
+        input_text: inputText,
+        parameters: {
+            temperature: parseFloat(formData.get('temperature')),
+            max_length: parseInt(formData.get('max_length')),
+            top_p: parseFloat(formData.get('top_p')),
+            top_k: parseInt(formData.get('top_k'))
+        }
+    };
+
+    fetch(`/api/playground/sessions/{{ session.id }}/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayGeneration(data.generation);
+            document.getElementById('generationStatus').textContent = 'Complete';
+        } else {
+            document.getElementById('generationStatus').textContent = 'Error: ' + data.error;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('generationStatus').textContent = 'Network error';
+    });
+}
+
+function displayGeneration(generation) {
+    const resultsDiv = document.getElementById('generationResults');
+    resultsDiv.innerHTML = `
+        <div class="alert alert-light">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <small class="text-muted">Generated in ${generation.generation_time.toFixed(2)}s</small>
+                <small class="text-muted">${generation.tokens_generated} tokens</small>
+            </div>
+            <p class="mb-0">${generation.generated_text}</p>
+        </div>
+    `;
+}
+
+function clearInput() {
+    document.getElementById('inputText').value = '';
+}
+
+function updateSession() {
+    const formData = new FormData(document.getElementById('sessionForm'));
+    const data = Object.fromEntries(formData);
+    
+    fetch(`/api/playground/sessions/{{ session.id }}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Session updated successfully');
+        } else {
+            alert('Error updating session: ' + data.error);
+        }
+    });
+}
+
+function loadTemplate(templateId) {
+    fetch(`/api/playground/templates/${templateId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const template = data.template;
+            document.querySelector('[name="system_prompt"]').value = template.system_prompt || '';
+            document.querySelector('[name="context"]').value = template.context || '';
+            document.getElementById('inputText').value = template.example_input || '';
+        }
+    });
+}
+
+function rateGeneration(generationId, rating) {
+    fetch(`/api/playground/generations/${generationId}/rate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({rating: rating})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Generation rated successfully');
+        }
+    });
+}
+
+function flagGeneration(generationId) {
+    const reason = prompt('Why are you flagging this generation?');
+    if (reason) {
+        fetch(`/api/playground/generations/${generationId}/rate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({flag_reason: reason})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Generation flagged successfully');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

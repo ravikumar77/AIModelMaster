@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}HuggingFace Hub Integration{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5 fw-bold">
+            <i data-feather="upload-cloud" class="me-3"></i>
+            HuggingFace Hub Integration
+        </h1>
+        <p class="lead text-muted">Upload and manage your fine-tuned models on HuggingFace Hub</p>
+    </div>
+</div>
+
+<!-- Authentication Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="key" class="me-2"></i>
+                    Authentication Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="authStatus">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2"></div>
+                        <span>Checking authentication...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Models -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i data-feather="cpu" class="me-2"></i>
+                    Available Models for Upload
+                </h5>
+                <button class="btn btn-primary" onclick="refreshModels()">
+                    <i data-feather="refresh-cw" class="me-1"></i>
+                    Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="modelsContainer">
+                    {% if models %}
+                        <div class="row">
+                            {% for model in models %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ model.name }}</h6>
+                                        <p class="card-text text-muted small">
+                                            {{ model.description or "No description" }}
+                                        </p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-{{ 'success' if model.status == 'AVAILABLE' else 'warning' }}">
+                                                {{ model.status }}
+                                            </span>
+                                            {% if model.status == 'AVAILABLE' %}
+                                            <a href="{{ url_for('upload_form', model_id=model.id) }}" 
+                                               class="btn btn-sm btn-primary">
+                                                <i data-feather="upload" class="me-1"></i>
+                                                Upload
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="inbox" class="text-muted mb-2" style="width: 48px; height: 48px;"></i>
+                            <p class="text-muted">No models available for upload</p>
+                            <a href="{{ url_for('models') }}" class="btn btn-outline-primary">
+                                <i data-feather="plus" class="me-1"></i>
+                                Create Models
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+    checkAuthStatus();
+});
+
+function checkAuthStatus() {
+    fetch('/huggingface/auth-status')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('authStatus');
+            if (data.authenticated) {
+                statusDiv.innerHTML = `
+                    <div class="d-flex align-items-center text-success">
+                        <i data-feather="check-circle" class="me-2"></i>
+                        <span>Authenticated with HuggingFace Hub</span>
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i data-feather="alert-triangle" class="me-2"></i>
+                        <strong>Not Authenticated</strong><br>
+                        You need to set your HUGGINGFACE_TOKEN environment variable to upload models.
+                        <br><small>Get your token from: <a href="https://huggingface.co/settings/tokens" target="_blank">https://huggingface.co/settings/tokens</a></small>
+                    </div>
+                `;
+            }
+            feather.replace();
+        })
+        .catch(error => {
+            document.getElementById('authStatus').innerHTML = `
+                <div class="alert alert-danger">
+                    <i data-feather="x-circle" class="me-2"></i>
+                    Error checking authentication status
+                </div>
+            `;
+            feather.replace();
+        });
+}
+
+function refreshModels() {
+    location.reload();
+}
+</script>
+{% endblock %}

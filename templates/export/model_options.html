@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block title %}Export {{ model.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('export.index') }}">Export</a></li>
+                <li class="breadcrumb-item active">{{ model.name }}</li>
+            </ol>
+        </nav>
+        
+        <h1 class="display-5 fw-bold">
+            <i data-feather="download" class="me-3"></i>
+            Export: {{ model.name }}
+        </h1>
+        <p class="lead text-muted">
+            Choose an export format for your trained model
+            <span class="badge bg-success ms-2">{{ model.status }}</span>
+        </p>
+    </div>
+</div>
+
+<!-- Model Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="info" class="me-2"></i>
+                    Model Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{ model.name }}</p>
+                        <p><strong>Base Model:</strong> {{ model.base_model }}</p>
+                        <p><strong>Status:</strong> <span class="badge bg-success">{{ model.status }}</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Created:</strong> {{ model.created_at.strftime('%Y-%m-%d %H:%M') if model.created_at else 'Unknown' }}</p>
+                        <p><strong>Description:</strong> {{ model.description or 'No description' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="row mb-4">
+    <!-- Triton Export -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i data-feather="server" class="me-2"></i>
+                    Triton Inference Server
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Export for high-performance GPU serving with NVIDIA Triton Inference Server.</p>
+                
+                <form id="tritonExportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Batch Size</label>
+                        <select class="form-select" name="batch_size">
+                            <option value="1" selected>1</option>
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="8">8</option>
+                            <option value="16">16</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Max Sequence Length</label>
+                        <select class="form-select" name="max_sequence_length">
+                            <option value="256">256</option>
+                            <option value="512" selected>512</option>
+                            <option value="1024">1024</option>
+                            <option value="2048">2048</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="dynamic_shape" id="tritonDynamicShape">
+                            <label class="form-check-label" for="tritonDynamicShape">
+                                Dynamic Shapes
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Optimization Level</label>
+                        <select class="form-select" name="optimization_level">
+                            <option value="basic" selected>Basic</option>
+                            <option value="standard">Standard</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary w-100" onclick="exportModel('triton')">
+                    <i data-feather="download" class="me-1"></i>
+                    Export to Triton
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- TensorFlow Lite Export -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i data-feather="smartphone" class="me-2"></i>
+                    TensorFlow Lite
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Optimize for mobile and edge devices with TensorFlow Lite.</p>
+                
+                <form id="tfliteExportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Quantization</label>
+                        <select class="form-select" name="quantization">
+                            <option value="none" selected>None (Full Precision)</option>
+                            <option value="dynamic">Dynamic Range</option>
+                            <option value="float16">Float16</option>
+                            <option value="int8">Int8</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Target Device</label>
+                        <select class="form-select" name="target_device">
+                            <option value="generic" selected>Generic</option>
+                            <option value="android">Android</option>
+                            <option value="ios">iOS</option>
+                            <option value="edgetpu">Edge TPU</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Max Sequence Length</label>
+                        <select class="form-select" name="max_sequence_length">
+                            <option value="128">128</option>
+                            <option value="256" selected>256</option>
+                            <option value="512">512</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="optimize_for_size" id="tfliteOptimizeSize" checked>
+                            <label class="form-check-label" for="tfliteOptimizeSize">
+                                Optimize for Size
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-success w-100" onclick="exportModel('tflite')">
+                    <i data-feather="download" class="me-1"></i>
+                    Export to TFLite
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HuggingFace Hub Export -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i data-feather="upload-cloud" class="me-2"></i>
+                    HuggingFace Hub
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Share your model with the community on HuggingFace Hub.</p>
+                
+                <form id="huggingfaceExportForm">
+                    <div class="mb-3">
+                        <label class="form-label">Repository Name *</label>
+                        <input type="text" class="form-control" name="repo_name" required 
+                               placeholder="my-awesome-model" pattern="[a-zA-Z0-9][a-zA-Z0-9-_.]{0,95}">
+                        <div class="form-text">Alphanumeric, hyphens, dots, underscores allowed</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">HuggingFace Token *</label>
+                        <input type="password" class="form-control" name="hf_token" required 
+                               placeholder="hf_xxxxxxxxxxxxxxxxxxxx">
+                        <div class="form-text">Get token from <a href="https://huggingface.co/settings/tokens" target="_blank">HF Settings</a></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Visibility</label>
+                        <select class="form-select" name="visibility">
+                            <option value="private" selected>Private</option>
+                            <option value="public">Public</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="2" 
+                                  placeholder="Fine-tuned model for..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="auto_readme" id="hfAutoReadme" checked>
+                            <label class="form-check-label" for="hfAutoReadme">
+                                Auto-generate README
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-warning w-100" onclick="exportModel('huggingface')">
+                    <i data-feather="upload-cloud" class="me-1"></i>
+                    Upload to Hub
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export History -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i data-feather="history" class="me-2"></i>
+                    Export History
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="exportJobsContainer">
+                    {% if export_jobs %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Job ID</th>
+                                        <th>Export Type</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                        <th>Completed</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in export_jobs %}
+                                    <tr>
+                                        <td>{{ job.id }}</td>
+                                        <td><span class="badge bg-info">{{ job.export_type }}</span></td>
+                                        <td>
+                                            {% set status_class = 'secondary' %}
+                                            {% if job.status.value == 'COMPLETED' %}
+                                                {% set status_class = 'success' %}
+                                            {% elif job.status.value == 'RUNNING' %}
+                                                {% set status_class = 'primary' %}
+                                            {% elif job.status.value == 'FAILED' %}
+                                                {% set status_class = 'danger' %}
+                                            {% endif %}
+                                            <span class="badge bg-{{ status_class }}">{{ job.status.value }}</span>
+                                        </td>
+                                        <td>{{ job.created_at.strftime('%m/%d %H:%M') if job.created_at else '-' }}</td>
+                                        <td>{{ job.completed_at.strftime('%m/%d %H:%M') if job.completed_at else '-' }}</td>
+                                        <td>
+                                            {% if job.status.value == 'COMPLETED' and job.output_path %}
+                                                {% if job.export_type == 'huggingface' %}
+                                                    <a href="{{ job.output_path }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i data-feather="external-link" class="me-1"></i>
+                                                        View
+                                                    </a>
+                                                {% else %}
+                                                    <a href="{{ url_for('export.download_export', job_id=job.id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i data-feather="download" class="me-1"></i>
+                                                        Download
+                                                    </a>
+                                                {% endif %}
+                                            {% elif job.status.value == 'RUNNING' %}
+                                                <button class="btn btn-sm btn-outline-info" onclick="checkJobStatus({{ job.id }})">
+                                                    <i data-feather="refresh-cw" class="me-1"></i>
+                                                    Check Status
+                                                </button>
+                                            {% elif job.status.value == 'FAILED' %}
+                                                <span class="text-danger small">{{ job.error_message or 'Export failed' }}</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i data-feather="clock" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
+                            <p class="text-muted">No export jobs for this model yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Progress Modal -->
+<div class="modal fade" id="exportProgressModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Export in Progress</h5>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border me-3" role="status"></div>
+                    <div>
+                        <p class="mb-1">Exporting model...</p>
+                        <p class="text-muted small mb-0" id="exportStatusText">Initializing export job</p>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentJobId = null;
+let statusCheckInterval = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    feather.replace();
+});
+
+function exportModel(exportType) {
+    const form = document.getElementById(exportType + 'ExportForm');
+    const formData = new FormData(form);
+    
+    // Convert FormData to JSON
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (form.querySelector(`[name="${key}"]`).type === 'checkbox') {
+            data[key] = form.querySelector(`[name="${key}"]`).checked;
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Show progress modal
+    const modal = new bootstrap.Modal(document.getElementById('exportProgressModal'));
+    modal.show();
+    
+    // Start export
+    fetch(`/export/api/{{ model.id }}/${exportType}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': getApiKey()
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.job_id) {
+            currentJobId = data.job_id;
+            document.getElementById('exportStatusText').textContent = 'Export job created. Checking progress...';
+            
+            // Start status checking
+            statusCheckInterval = setInterval(() => checkJobStatus(currentJobId), 2000);
+        } else {
+            throw new Error(data.error || 'Failed to create export job');
+        }
+    })
+    .catch(error => {
+        document.getElementById('exportStatusText').textContent = 'Error: ' + error.message;
+        if (statusCheckInterval) {
+            clearInterval(statusCheckInterval);
+        }
+    });
+}
+
+function checkJobStatus(jobId) {
+    fetch(`/export/api/jobs/${jobId}`, {
+        headers: {
+            'X-API-Key': getApiKey()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'COMPLETED') {
+            document.getElementById('exportStatusText').textContent = 'Export completed successfully!';
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+            setTimeout(() => location.reload(), 2000);
+        } else if (data.status === 'FAILED') {
+            document.getElementById('exportStatusText').textContent = 'Export failed: ' + (data.error_message || 'Unknown error');
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+        } else if (data.status === 'RUNNING') {
+            document.getElementById('exportStatusText').textContent = 'Export in progress...';
+        }
+    })
+    .catch(error => {
+        console.error('Error checking job status:', error);
+    });
+}
+
+function getApiKey() {
+    // For demo purposes, return a mock API key
+    // In production, this would be handled through proper authentication
+    return 'demo-api-key';
+}
+</script>
+{% endblock %}
