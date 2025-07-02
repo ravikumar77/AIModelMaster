@@ -1,0 +1,113 @@
+Integration Plan: Add Custom Model Training with Custom Data into Your LLM Platform
+✅ Where This Feature Fits in Your Existing Platform:
+Existing Modules → Expand as follows:
+
+Existing Section	Enhancement
+Dashboard	Show counts of custom datasets, running fine-tuning jobs
+Models	Allow users to upload base models or select pre-existing Hugging Face models
+Training	New "Custom Training Job" page
+Inference	Support inference for user-trained models
+Evaluation	Evaluate user fine-tuned models
+Export	Let users download fine-tuned models
+
+✅ High-Level Flow for Users:
+Upload Custom Dataset →
+
+Choose Base Model →
+
+Set Training Parameters (epochs, batch size, learning rate, LoRA/QLoRA option, etc.) →
+
+Start Training →
+
+Monitor Training Job (logs, GPU usage, loss curves) →
+
+Evaluate →
+
+Export/Deploy →
+
+Run Inference on Trained Model
+
+✅ Backend Integration (Python FastAPI / .NET Core API):
+✅ 1. API Endpoints for Custom Training Flow:
+Endpoint	Method	Purpose
+/datasets/upload	POST	Upload custom dataset
+/models/available	GET	List available base models (e.g., GPT2, LLaMA)
+/training/jobs	POST	Submit new custom training job
+/training/jobs/{id}	GET	Get job status & logs
+/models/custom/{id}/evaluate	POST	Evaluate a trained model
+/models/custom/{id}/export	GET	Export model artifacts (Torch / ONNX)
+
+✅ 2. Training Job Backend Service Flow:
+Accept user job request with:
+
+Base model name
+
+Custom dataset path
+
+Hyperparameters (epochs, batch size, learning rate, optimizer, LoRA config)
+
+GPU/CPU resource allocation
+
+Trigger Python training script (train.py, fine_tune_lora.py) using subprocess / Celery / job queue.
+
+Save logs and checkpoints to a /jobs/{job_id}/ folder.
+
+Save trained models to /models/custom/{user_model_id}/.
+
+✅ Frontend (Angular) Integration:
+✅ New Angular Pages/Components:
+Page	Purpose
+Dataset Upload Page	Allow user to upload .txt, .jsonl, or zip datasets
+Custom Model Training Form	UI for selecting base model, dataset, hyperparameters
+Training Job Monitor Page	Real-time status, loss curve graph (using ngx-charts / Chart.js)
+Evaluation Page	Form to run evaluation (BLEU, ROUGE, Perplexity)
+Custom Inference Playground	Let user test their fine-tuned model
+
+✅ Angular API Services:
+DatasetService.ts
+
+ModelService.ts
+
+TrainingService.ts
+
+EvaluationService.ts
+
+ExportService.ts
+
+✅ Folder Structure Impact (Server-Side):
+bash
+Copy
+Edit
+llm_platform/
+├── data/
+│   └── user_datasets/
+├── models/
+│   └── custom/
+├── jobs/
+│   └── training_runs/
+├── src/
+│   ├── train.py
+│   ├── fine_tune_lora.py
+│   ├── api/
+│   │   ├── dataset_api.py
+│   │   ├── training_api.py
+│   │   └── inference_api.py
+✅ Optional Advanced Features for Later:
+Support QLoRA for small GPUs
+
+Provide visual metrics after training (TensorBoard style)
+
+Let users save hyperparameter presets
+
+Allow distributed training (multi-GPU)
+
+✅ Immediate Next Steps I Can Generate for You:
+Custom Training Job API endpoint sample code
+
+Angular training form component with field bindings
+
+Python training job trigger (calling train.py with args)
+
+Custom dataset upload backend and frontend
+
+Database table design for jobs, datasets, models

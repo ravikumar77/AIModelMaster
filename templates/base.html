@@ -5,8 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}LLM Development Platform{% endblock %}</title>
     
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    
+    <!-- Enhanced Theme CSS -->
+    <link href="{{ url_for('static', filename='css/enhanced-theme.css') }}" rel="stylesheet">
     
     <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
@@ -14,62 +24,113 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
     <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
 </head>
-<body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
+<body class="enhanced-theme"
+    {% block page_attributes %}{% endblock %}>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+         style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); z-index: 9999;">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5 class="text-white">Loading LLM Platform...</h5>
+        </div>
+    </div>
+    <!-- Enhanced Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" data-aos="fade-down">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i data-feather="cpu" class="me-2"></i>
-                LLM Platform
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <div class="icon-wrapper me-2" style="background: var(--primary-gradient); width: 40px; height: 40px;">
+                    <i data-feather="cpu" style="width: 20px; height: 20px;" class="text-white"></i>
+                </div>
+                <span class="fw-bold">LLM Platform</span>
             </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
-                            <i data-feather="home" class="me-1"></i>Dashboard
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint == 'index' %}active{% endif %}" 
+                           href="{{ url_for('index') }}">
+                            <i data-feather="home" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Dashboard</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['models', 'new_model', 'model_detail'] %}active{% endif %}" href="{{ url_for('models') }}">
-                            <i data-feather="layers" class="me-1"></i>Models
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint in ['models', 'new_model', 'model_detail'] %}active{% endif %}" 
+                           href="{{ url_for('models') }}">
+                            <i data-feather="layers" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Models</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['training', 'new_training', 'training_detail'] %}active{% endif %}" href="{{ url_for('training') }}">
-                            <i data-feather="trending-up" class="me-1"></i>Training
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint in ['training', 'new_training', 'training_detail'] %}active{% endif %}" 
+                           href="{{ url_for('training') }}">
+                            <i data-feather="trending-up" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Training</span>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center {% if request.endpoint and 'custom' in request.endpoint %}active{% endif %}" 
+                           href="#" id="customDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i data-feather="tool" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Custom Training</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="customDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('custom.dashboard') }}">
+                                <i data-feather="activity" class="me-2" style="width: 14px; height: 14px;"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('custom.datasets') }}">
+                                <i data-feather="database" class="me-2" style="width: 14px; height: 14px;"></i>Datasets
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('custom.training') }}">
+                                <i data-feather="play" class="me-2" style="width: 14px; height: 14px;"></i>Training Jobs
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint == 'inference' %}active{% endif %}" 
+                           href="{{ url_for('inference') }}">
+                            <i data-feather="message-circle" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Inference</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'inference' %}active{% endif %}" href="{{ url_for('inference') }}">
-                            <i data-feather="message-circle" class="me-1"></i>Inference
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint in ['playground_index', 'playground_session', 'playground_templates', 'playground_export'] %}active{% endif %}" 
+                           href="{{ url_for('playground_index') }}">
+                            <i data-feather="edit-3" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Playground</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['playground_index', 'playground_session', 'playground_templates', 'playground_export'] %}active{% endif %}" href="{{ url_for('playground_index') }}">
-                            <i data-feather="edit-3" class="me-1"></i>Playground
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint in ['experiments.index', 'experiments.detail', 'experiments.compare'] %}active{% endif %}" 
+                           href="{{ url_for('experiments.index') }}">
+                            <i data-feather="bar-chart-2" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Experiments</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint in ['experiments.index', 'experiments.detail', 'experiments.compare'] %}active{% endif %}" href="{{ url_for('experiments.index') }}">
-                            <i data-feather="activity" class="me-1"></i>Experiments
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint == 'evaluation' %}active{% endif %}" 
+                           href="{{ url_for('evaluation') }}">
+                            <i data-feather="check-circle" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Evaluation</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'evaluation' %}active{% endif %}" href="{{ url_for('evaluation') }}">
-                            <i data-feather="bar-chart" class="me-1"></i>Evaluation
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'export' %}active{% endif %}" href="{{ url_for('export') }}">
-                            <i data-feather="download" class="me-1"></i>Export
+                        <a class="nav-link d-flex align-items-center {% if request.endpoint in ['export_routes.index', 'export'] %}active{% endif %}" 
+                           href="{{ url_for('export_routes.index') }}">
+                            <i data-feather="download" class="me-2" style="width: 18px; height: 18px;"></i>
+                            <span>Export</span>
                         </a>
                     </li>
                 </ul>
@@ -92,19 +153,45 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="container my-4">
-        {% block content %}{% endblock %}
+    <main class="container-fluid my-4" style="min-height: calc(100vh - 200px);">
+        <div class="row">
+            <div class="col-12">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="mt-5 py-4 border-top">
+    <!-- Enhanced Footer -->
+    <footer class="mt-auto py-5" style="background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.1);" data-aos="fade-up">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <p class="text-muted">&copy; 2025 LLM Development Platform</p>
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="d-flex align-items-center mb-3 mb-md-0">
+                        <div class="icon-wrapper me-3" style="background: var(--primary-gradient); width: 32px; height: 32px;">
+                            <i data-feather="cpu" style="width: 16px; height: 16px;" class="text-white"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">LLM Platform</h6>
+                            <small class="text-muted">Advanced AI Development</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6 text-end">
-                    <p class="text-muted">Built with Flask & Hugging Face Transformers</p>
+                <div class="col-md-4 text-center">
+                    <p class="text-muted mb-0">&copy; 2025 LLM Development Platform</p>
+                    <small class="text-muted">Built with Flask & Hugging Face Transformers</small>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex justify-content-end gap-3">
+                        <a href="#" class="text-muted hover-primary" title="GitHub">
+                            <i data-feather="github" style="width: 20px; height: 20px;"></i>
+                        </a>
+                        <a href="#" class="text-muted hover-primary" title="Documentation">
+                            <i data-feather="book" style="width: 20px; height: 20px;"></i>
+                        </a>
+                        <a href="#" class="text-muted hover-primary" title="API">
+                            <i data-feather="code" style="width: 20px; height: 20px;"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -113,8 +200,112 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Initialize Feather Icons -->
-    <script>feather.replace()</script>
+    <!-- Global Theme Initialization -->
+    <script>
+        // Initialize AOS animations
+        AOS.init({
+            duration: 800,
+            easing: 'ease-out-cubic',
+            once: true,
+            offset: 50
+        });
+        
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Hide loading screen
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 300);
+            }
+        }, 1000);
+        
+        // Global theme utilities
+        window.LLMPlatform = {
+            // Animate counter elements
+            animateCounter: function(element, target, duration = 2000) {
+                const start = 0;
+                const increment = target / (duration / 16);
+                let current = start;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    element.textContent = Math.floor(current);
+                    
+                    if (current >= target) {
+                        element.textContent = target;
+                        clearInterval(timer);
+                    }
+                }, 16);
+            },
+            
+            // Add loading state to buttons
+            setButtonLoading: function(button, loading = true) {
+                if (loading) {
+                    button.disabled = true;
+                    const originalText = button.innerHTML;
+                    button.dataset.originalText = originalText;
+                    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = button.dataset.originalText || button.innerHTML;
+                }
+            },
+            
+            // Show toast notifications
+            showToast: function(message, type = 'info') {
+                const toastContainer = document.getElementById('toast-container') || (() => {
+                    const container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                    container.style.zIndex = '9999';
+                    document.body.appendChild(container);
+                    return container;
+                })();
+                
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-bg-${type} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+                
+                toastContainer.appendChild(toast);
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                toast.addEventListener('hidden.bs.toast', () => {
+                    toast.remove();
+                });
+            }
+        };
+        
+        // Add hover effects to footer links
+        document.querySelectorAll('.hover-primary').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                this.style.color = '#667eea';
+                this.style.transform = 'translateY(-2px)';
+                this.style.transition = 'all 0.3s ease';
+            });
+            
+            link.addEventListener('mouseleave', function() {
+                this.style.color = '';
+                this.style.transform = '';
+            });
+        });
+        
+        // Console branding
+        console.log('%c🚀 LLM Platform %c- Advanced AI Development Environment', 
+                   'color: #667eea; font-weight: bold; font-size: 16px;', 
+                   'color: #94a3b8; font-size: 12px;');
+    </script>
     
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>

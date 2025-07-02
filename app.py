@@ -15,15 +15,11 @@ db = SQLAlchemy(model_class=Base)
 
 # create the app
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
+app.secret_key = os.environ.get("SESSION_SECRET")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1) # needed for url_for to generate with https
 
 # configure the database, relative to the app instance folder
-database_url = os.environ.get("DATABASE_URL")
-if not database_url:
-    # Fallback to SQLite for development
-    database_url = "sqlite:///instance/llm_platform.db"
-app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
     "pool_pre_ping": True,
@@ -49,6 +45,9 @@ with app.app_context():
     
     from export_routes import init_export_routes
     init_export_routes(app)
+    
+    from custom_routes import init_custom_routes
+    init_custom_routes(app)
 
     db.create_all()
     

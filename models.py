@@ -1,6 +1,7 @@
 from datetime import datetime
 from sqlalchemy import Enum
 import enum
+import json
 from app import db
 
 class ModelStatus(enum.Enum):
@@ -393,3 +394,146 @@ class ExperimentNote(db.Model):
     
     def __repr__(self):
         return f'<ExperimentNote {self.title}>'
+
+
+# Custom Dataset Models for User-Uploaded Data
+class DatasetFormat(enum.Enum):
+    TEXT = "TEXT"
+    JSONL = "JSONL"
+    CSV = "CSV"
+    CONVERSATION = "CONVERSATION"
+    INSTRUCTION = "INSTRUCTION"
+
+
+class CustomDataset(db.Model):
+    __tablename__ = 'custom_dataset'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text)
+    dataset_format = db.Column(Enum(DatasetFormat), nullable=False)
+    
+    # File information
+    original_filename = db.Column(db.String(256), nullable=False)
+    file_path = db.Column(db.String(512), nullable=False)
+    file_size = db.Column(db.BigInteger)
+    
+    # Dataset metadata
+    num_samples = db.Column(db.Integer)
+    sample_length_avg = db.Column(db.Float)
+    sample_length_max = db.Column(db.Integer)
+    
+    # Processing information
+    is_processed = db.Column(db.Boolean, default=False)
+    processing_logs = db.Column(db.Text)
+    validation_errors = db.Column(db.Text)
+    
+    # User and timing
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Settings
+    is_public = db.Column(db.Boolean, default=False)
+    tags = db.Column(db.Text)  # JSON array
+    
+    # Relationships
+    training_jobs = db.relationship('CustomTrainingJob', backref='dataset', lazy=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'dataset_format': self.dataset_format.value,
+            'original_filename': self.original_filename,
+            'file_size': self.file_size,
+            'num_samples': self.num_samples,
+            'sample_length_avg': self.sample_length_avg,
+            'sample_length_max': self.sample_length_max,
+            'is_processed': self.is_processed,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'tags': json.loads(self.tags) if self.tags else []
+        }
+    
+    def __repr__(self):
+        return f'<CustomDataset {self.name}>'
+
+
+class CustomTrainingJob(db.Model):
+    __tablename__ = 'custom_training_job'
+    id = db.Column(db.Integer, primary_key=True)
+    job_name = db.Column(db.String(128), nullable=False)
+    
+    # Core configuration
+    base_model = db.Column(db.String(128), nullable=False)  # Model name like 'gpt2', 'distilgpt2'
+    dataset_id = db.Column(db.Integer, db.ForeignKey('custom_dataset.id'), nullable=False)
+    model_id = db.Column(db.Integer, db.ForeignKey('llm_model.id'), nullable=True)  # Result model
+    
+    # Training parameters
+    epochs = db.Column(db.Integer, default=3)
+    learning_rate = db.Column(db.Float, default=0.0001)
+    batch_size = db.Column(db.Integer, default=8)
+    max_length = db.Column(db.Integer, default=512)
+    warmup_steps = db.Column(db.Integer, default=500)
+    
+    # LoRA/QLoRA configuration
+    use_lora = db.Column(db.Boolean, default=True)
+    lora_r = db.Column(db.Integer, default=8)
+    lora_alpha = db.Column(db.Integer, default=32)
+    lora_dropout = db.Column(db.Float, default=0.05)
+    use_qlora = db.Column(db.Boolean, default=False)
+    
+    # Job status and progress
+    status = db.Column(Enum(TrainingStatus), default=TrainingStatus.PENDING)
+    progress = db.Column(db.Float, default=0.0)
+    current_epoch = db.Column(db.Integer, default=0)
+    current_loss = db.Column(db.Float)
+    best_loss = db.Column(db.Float)
+    
+    # Logs and monitoring
+    training_logs = db.Column(db.Text)
+    error_message = db.Column(db.Text)
+    metrics_data = db.Column(db.Text)  # JSON time series data
+    
+    # Resource usage
+    gpu_usage = db.Column(db.Float)
+    memory_usage_gb = db.Column(db.Float)
+    estimated_time_remaining = db.Column(db.Integer)  # minutes
+    
+    # Timing
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    
+    # Output configuration
+    output_model_name = db.Column(db.String(128))
+    save_checkpoints = db.Column(db.Boolean, default=True)
+    checkpoint_frequency = db.Column(db.Integer, default=500)  # steps
+    
+    def __repr__(self):
+        return f'<CustomTrainingJob {self.job_name}>'
+
+
+class TrainingCheckpoint(db.Model):
+    __tablename__ = 'training_checkpoint'
+    id = db.Column(db.Integer, primary_key=True)
+    training_job_id = db.Column(db.Integer, db.ForeignKey('custom_training_job.id'), nullable=False)
+    
+    # Checkpoint information
+    checkpoint_name = db.Column(db.String(128), nullable=False)
+    file_path = db.Column(db.String(512), nullable=False)
+    epoch = db.Column(db.Integer, nullable=False)
+    step = db.Column(db.Integer, nullable=False)
+    loss_value = db.Column(db.Float)
+    
+    # File metadata
+    file_size = db.Column(db.BigInteger)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Quality metrics
+    perplexity = db.Column(db.Float)
+    validation_loss = db.Column(db.Float)
+    
+    def __repr__(self):
+        return f'<TrainingCheckpoint {self.checkpoint_name}>'
